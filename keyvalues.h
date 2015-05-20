@@ -7,6 +7,7 @@
    is destroyed, it frees all memory that it allocated.
 */
 
+#include <stdint.h>
 #include <fstream>
 
 struct KeyValues
@@ -34,12 +35,12 @@ struct KeyValues
 		}
 	}
 
-	int size;
+	uint32_t size;
 	char ** name;
 	char ** data;
 };
 
 void ReadOffsetString(std::fstream& f, char *& sz);
-void ReadKVBlock(std::fstream& f, KeyValues& kv, int nNameLength, int nDataLength);
+void ReadKVBlock(std::fstream& f, KeyValues& kv, uint32_t nNameLength, uint32_t nDataLength);
 
 #endif

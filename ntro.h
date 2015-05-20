@@ -18,7 +18,7 @@
 	     --> 2 bytes:  On-disk offset
 	     --> 4 bytes:  Offset to Indirection (?)
 	       ---> 1 byte:  Unknown
-	     --> 4 bytes:  Number of indirections (?)
+	     --> 4 bytes:  Indirection depth
 	     --> 4 bytes:  Type data
 	     --> 2 bytes:  Type
 	   -> 4 bytes:  Number of introspection fields
@@ -44,7 +44,10 @@ enum IntrospectionDataType
 #include <fstream>
 #include "keyvalues.h"
 
+KeyValues* GetNTROResourceDataByID(uint32_t uID);
+const char* GetNTROResourceNameByID(uint32_t uID);
+
 void ProcessNTROBlock(std::fstream& f, KeyValues& sNTROInfo);
-void ReadStructuredData(std::fstream& f, KeyValues * sDestination, KeyValues * sSourceStruct);
+void ReadStructuredData(std::fstream& f, KeyValues& sDestination, KeyValues * sSourceStruct = NULL);
 
 #endif

@@ -53,12 +53,10 @@ void S2Decompiler::DecompileVPCF(const std::string& szFilename, const std::strin
 			p1 = f.tellg();
 			f.seekg(*(int*)szBuffer - 4, ios::cur);
 
-			f.seekg(4, ios::cur);    //0xAAA29DC3, the .vpcf data block ID
-
 			if ((psParticleSystemTemplate == NULL) || (psParticleOpTemplate == NULL))
 				throw std::string("Introspection data not found.");
 
-			ReadStructuredData(f, &sParticleInfo, psParticleSystemTemplate);
+			ReadStructuredData(f, sParticleInfo);
 
 			f.seekg(p1 + 4);
 		}
