@@ -17,8 +17,9 @@ bool CheckFilenameMatch(const char * sz1, const char * sz2)
 	}
 	if (*sz2 == '*')
 	{
-		if ((*(sz2 + 1) != '\0') && (*sz1 == '\0'))
-			return false;
+		if (*sz1 == '\0')
+			return (*(sz2 + 1) == '\0');
+		
 		return CheckFilenameMatch(sz1 + 1, sz2) || CheckFilenameMatch(sz1, sz2 + 1);
 	}
 	return false;
@@ -51,7 +52,12 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory)
 {
 	_szBaseDirectory = szBaseDirectory;
+	if (_szBaseDirectory.find_last_of("\\/") != _szBaseDirectory.length() - 1)
+		_szBaseDirectory += "\\";
 	_szOutputDirectory = szOutputDirectory;
+	if (_szOutputDirectory.find_last_of("\\/") != _szOutputDirectory.length() - 1)
+		_szOutputDirectory += "\\";
+
 	std::vector<std::string> szNewFileList;
 	for (uint32_t i = 0; i < _szFileList.size(); i++)
 	{
@@ -61,9 +67,18 @@ void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std:
 			szNewFileList.push_back(_szFileList[i]);
 	}
 	_szFileList = szNewFileList;
-	ProcessDirectory(_szBaseDirectory);
-	std::cout << "\nFinished decompiling!\n";
-	std::cout << _uSuccessCount << "/" << _uSuccessCount + _uFailedCount << " files were successfully decompiled.\n";
+	if (_szFileList.size() != 0)
+	{
+		std::cout << "[S2DC]: Searching for matching files...\n";
+		std::cout << "[S2DC]: Please be patient, as this may take a while.\n\n";
+		ProcessDirectory(_szBaseDirectory);
+	}
+	std::cout << "\n[S2DC]: Finished decompiling!\n";
+	if (_uSuccessCount + _uFailedCount == 0)
+		std::cout << "[S2DC]: No matching files were found.\n";
+	else
+		std::cout << "[S2DC]: " << _uSuccessCount << "/" << _uSuccessCount + _uFailedCount << " files were successfully decompiled.\n";
+	
 }
 
 void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
@@ -81,11 +96,12 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 			else if (bfs::is_regular_file(current->path()))
 			{
 				std::string szFilename = current->path().string();
+				szFilename = szFilename.substr(szFilename.find_last_of("\\/") + 1);
 				for (uint32_t i = 0; i < _szFileList.size(); i++)
 				{
 					if (CheckFilenameMatch(szFilename.c_str(), _szFileList[i].c_str()) == true)
 					{
-						Decompile(szFilename);
+						Decompile(current->path().string());
 						break;
 					}
 				}
@@ -169,7 +185,8 @@ void S2Decompiler::Decompile(const std::string& szPathname)
 	}*/
 	else
 	{
-		std::cerr << "[S2DC]: Unsupported file type \"" + szExtension + "\".";
+		std::cout << "failed!\n";
+		std::cerr << "[S2DC]: Unsupported file type \"" + szExtension + "\".\n";
 		bfs::remove_all(szNewDirectory);
 		_uFailedCount++;
 		return;
