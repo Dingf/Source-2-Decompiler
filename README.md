@@ -1,4 +1,4 @@
-# Source-2-Decompiler
+# Source 2 Decompiler (S2DC)
 It decompiles Source 2 things.
 ## Usage
     Usage: s2dc [-d <input path>] [-o <output path>] <input(s)>
