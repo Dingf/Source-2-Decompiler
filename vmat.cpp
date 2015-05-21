@@ -32,7 +32,7 @@ void S2Decompiler::DecompileVMAT(const std::string& szFilename, const std::strin
 {
 	char szBuffer[4];
 
-	int32_t i, j;
+	int32_t i;
 	uint32_t nNumBlocks;
 
 	KeyValues sRERLInfo, sNTROInfo;

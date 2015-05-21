@@ -13,12 +13,12 @@ KeyValues * psLastNTROInfo = NULL;
 
 KeyValues* GetNTROResourceDataByID(uint32_t uID)
 {
-	if (psLastNTROInfo == NULL)
+	if (!psLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
 	for (uint32_t i = 0; i < psLastNTROInfo->size; i++)
 	{
-		if (uID == *(uint32_t*)&psLastNTROInfo->name[i][strlen(psLastNTROInfo->name[i])+1])
+		if (uID == *(uint32_t*)&psLastNTROInfo->name[i][strlen(psLastNTROInfo->name[i]) + 1])
 		{
 			return (KeyValues*)psLastNTROInfo->data[i];
 		}
@@ -28,7 +28,7 @@ KeyValues* GetNTROResourceDataByID(uint32_t uID)
 
 const char* GetNTROResourceNameByID(uint32_t uID)
 {
-	if (psLastNTROInfo == NULL)
+	if (!psLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
 	for (uint32_t i = 0; i < psLastNTROInfo->size; i++)
@@ -240,16 +240,17 @@ void ReadStructuredData(std::fstream& f, KeyValues& sDestination, KeyValues * ps
 		psSourceStruct = sStructStack.top();
 		for (i = 0; i < psSourceStruct->size; i++)
 		{
-			uint16_t uNameLength = strlen(psSourceStruct->name[i]);
+			uint32_t uNameLength = strlen(psSourceStruct->name[i]);
 			uint16_t uDiskOffset = *(uint16_t*)&psSourceStruct->data[i][0];
 			uint16_t uDataSize = *(uint16_t*)&psSourceStruct->data[i][2];
 			uint16_t uDataType = *(uint16_t*)&psSourceStruct->data[i][4];
 			uint32_t uStructID = *(uint32_t*)&psSourceStruct->data[i][6];
 			uint32_t uIndirectionLevel = *(uint32_t*)&psSourceStruct->data[i][10];
 
-			sDestination.name[uIndex] = new char[uNameLength + 1];
+			sDestination.name[uIndex] = new char[uNameLength + 3];
 			memcpy(sDestination.name[uIndex], psSourceStruct->name[i], uNameLength);
 			sDestination.name[uIndex][uNameLength] = '\0';
+			memcpy(&sDestination.name[uIndex][uNameLength+1], &uDataType, 2);
 
 			if (uTotalOffset != uDiskOffset)
 				f.seekg((int32_t)uDiskOffset - (int32_t)uTotalOffset, ios::cur);
@@ -293,7 +294,21 @@ void ReadStructuredData(std::fstream& f, KeyValues& sDestination, KeyValues * ps
 								f.read(szBuffer, 4);
 								f.seekg(*(int*)szBuffer - 4, ios::cur);
 							}
-							sParticleInfoStruct->data[j] = (char*)new KeyValues;
+
+							f.read(szBuffer, 4);
+							const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
+							if (szStructName != NULL)
+							{
+								uint32_t uStructNameLength = strlen(szStructName);
+								sParticleInfoStruct->name[j] = new char[uStructNameLength + 1];
+								memcpy(sParticleInfoStruct->name[j], szStructName, uStructNameLength);
+								sParticleInfoStruct->name[j][uStructNameLength] = '\0';
+								sParticleInfoStruct->data[j] = (char*)new KeyValues[1];
+							}
+							else
+								throw std::string("No matching NTRO structure was found for the header.");
+							f.seekg(-4, ios::cur);
+
 							ReadStructuredData(f, *(KeyValues*)sParticleInfoStruct->data[j]);
 
 							f.seekg(p2 + 4);

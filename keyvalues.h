@@ -5,6 +5,9 @@
 
    A simple struct that contains a fixed number of name/generic data pairs. When the struct
    is destroyed, it frees all memory that it allocated.
+
+   To prevent memory leaks and/or invalid deallocations, make sure that all non-NULL name
+   and data values have been dynamically allocated with new[]. 
 */
 
 #include <stdint.h>

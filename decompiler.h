@@ -20,20 +20,12 @@
    4 bytes : Size of block
 */
 
-#include <stdlib.h>
+#include <stdint.h>
 #include <string>
 #include <fstream>
 #include <vector>
 #include "rerl.h"
 #include "ntro.h"
-
-enum DecompileResult
-{
-	DECOMPILE_SUCCESSFUL = 0,
-	DECOMPILE_FAILED = 1,
-	DECOMPILE_FILE_TYPE_NOT_SUPPORTED = 2,
-	DECOMPILE_COULD_NOT_CREATE_DIRECTORY = 3,
-};
 
 class S2Decompiler
 {
@@ -44,12 +36,13 @@ class S2Decompiler
 		void StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory);
 	private:
 		void ProcessDirectory(const std::string& szDirectory);
-		DecompileResult Decompile(const std::string& szPathname);
+		void Decompile(const std::string& szPathname);
 
 		void DecompileVMAT(const std::string& szFilename, const std::string& szOutputDirectory);
 		void DecompileVPCF(const std::string& szFilename, const std::string& szOutputDirectory);
 		void DecompileVTEX(const std::string& szFilename, const std::string& szOutputDirectory, bool bGenerateVTEX = true, bool bGenerateMipmaps = true);
 
+		uint32_t _uSuccessCount, _uFailedCount;
 		std::string _szBaseDirectory;
 		std::string _szOutputDirectory;
 		std::vector<std::string> _szFileList;

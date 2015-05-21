@@ -11,7 +11,7 @@ const char* GetExternalResourceName(const char* szRefID)
 	if (psLastRERLInfo == NULL)
 		throw std::string("No RERL information was found. (Did you forget to process the RERL block first?)");
 
-	for (uint32_t i = 0; i < psLastRERLInfo->size; i++)
+	for (int32_t i = 0; i < psLastRERLInfo->size; i++)
 	{
 		if (strncmp(szRefID, psLastRERLInfo->data[i], 8) == 0)
 		{
@@ -33,7 +33,7 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
 	f.read((char*)&sRERLInfo.size, 4);
 	sRERLInfo.name = new char *[sRERLInfo.size];
 	sRERLInfo.data = new char *[sRERLInfo.size];
-	for (uint32_t i = 0; i < sRERLInfo.size; ++i)
+	for (int32_t i = 0; i < sRERLInfo.size; ++i)
 	{
 		sRERLInfo.data[i] = new char[9];
 		f.read(sRERLInfo.data[i], 8);

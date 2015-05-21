@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <boost/filesystem.hpp>
@@ -29,6 +30,17 @@ int main(int argc, char ** argv)
 		}
 		else
 			szFileList.push_back(std::string(argv[i]));
+	}
+
+	if (szFileList.empty())
+	{
+		std::cout << "Usage: s2dc [-d <input path>] [-o <output path>] <input(s)>\n\n";
+		std::cout << "\t[Input]\n\t-d\tSpecifies the path to search for input files.\n\t\tIf an absolute pathname is given, this path is ignored.\n\n";
+		std::cout << "\t[Output]\n\t-d\tSpecifies the output path. This path only serves as the\n\t\troot folder for the output. The directory structure\n\t\trelative to the input path is still preserved.";
+		std::cout << "\n\n\nSource 2 Resource Decompiler\n\n";
+		std::cout << "S2DC searches the input path (or dota_ugc\\game\\dota_imported, if not specified) for all files that match the input file(s). Wildcards in the input (*) are accepted, and will correspond to any file which also matches the pattern. Currently supports the .vtex_c, .vmat_c, and .vpcf_c file formats.\n\n";
+		std::cout << "Decompiled resources will be written to the output path (or the local directory, if not specified), but their directory structure relative to the input path is still preserved. If the input is an absolute path, the output will be found in the root folder (the output path) instead.\n\n";
+		return 1;
 	}
 
 	if (szBasePath.empty())

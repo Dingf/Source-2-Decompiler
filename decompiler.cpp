@@ -26,6 +26,7 @@ bool CheckFilenameMatch(const char * sz1, const char * sz2)
 
 S2Decompiler::S2Decompiler()
 {
+	_uSuccessCount = _uFailedCount = 0;
 	_szFileList.push_back("*.vtex_c");
 	_szFileList.push_back("*.vmat_c");
 	_szFileList.push_back("*.vpcf_c");
@@ -35,6 +36,7 @@ S2Decompiler::S2Decompiler()
 
 S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 {
+	_uSuccessCount = _uFailedCount = 0;
 	_szFileList = szFileList;
 	if (_szFileList.empty())
 	{
@@ -60,6 +62,8 @@ void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std:
 	}
 	_szFileList = szNewFileList;
 	ProcessDirectory(_szBaseDirectory);
+	std::cout << "\nFinished decompiling!\n";
+	std::cout << _uSuccessCount << "/" << _uSuccessCount + _uFailedCount << " files were successfully decompiled.\n";
 }
 
 void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
@@ -90,7 +94,7 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 	}
 }
 
-DecompileResult S2Decompiler::Decompile(const std::string& szPathname)
+void S2Decompiler::Decompile(const std::string& szPathname)
 {
 	std::string szFilename;
 	std::string szExtension = szPathname.substr(szPathname.find_last_of("."));
@@ -106,7 +110,8 @@ DecompileResult S2Decompiler::Decompile(const std::string& szPathname)
 		if (!bfs::create_directories(bfs::path(szNewDirectory)))
 		{
 			std::cerr << "[S2DC]: Could not create directory \"" + szNewDirectory + "\".";
-			return DECOMPILE_COULD_NOT_CREATE_DIRECTORY;
+			_uFailedCount++;
+			return;
 		}
 	}
 
@@ -117,11 +122,13 @@ DecompileResult S2Decompiler::Decompile(const std::string& szPathname)
 		{
 			DecompileVTEX(_szBaseDirectory + szFilename, szNewDirectory);
 			std::cout << "done!\n";
+			_uSuccessCount++;
 		}
 		catch (std::string& s)
 		{
 			std::cout << "failed!\n";
 			std::cerr << "[VTEX]: " << s << "\n";
+			_uFailedCount++;
 		}
 	}
 	else if (szExtension == ".vmat_c")
@@ -130,36 +137,41 @@ DecompileResult S2Decompiler::Decompile(const std::string& szPathname)
 		{
 			DecompileVMAT(_szBaseDirectory + szFilename, szNewDirectory);
 			std::cout << "done!\n";
+			_uSuccessCount++;
 		}
 		catch (std::string& s)
 		{
 			std::cout << "failed!\n";
 			std::cerr << "[VMAT]: " << s << "\n";
+			_uFailedCount++;
 		}
 	}
 	else if (szExtension == ".vpcf_c")
 	{
-		//This doesn't work... yet
 		try
 		{
 			DecompileVPCF(_szBaseDirectory + szFilename, szNewDirectory);
 			std::cout << "done!\n";
+			_uSuccessCount++;
 		}
 		catch (std::string& s)
 		{
 			std::cout << "failed!\n";
 			std::cerr << "[VPCF]: " << s << "\n";
-		}/**/
+			_uFailedCount++;
+		}
 	}
-	else if (szExtension == ".vmdl_c")
+	/*else if (szExtension == ".vmdl_c")
 	{
 	}
 	else if (szExtension == ".vsnd_c")
 	{
-	}
+	}*/
 	else
 	{
+		std::cerr << "[S2DC]: Unsupported file type \"" + szExtension + "\".";
 		bfs::remove_all(szNewDirectory);
-		return DECOMPILE_FILE_TYPE_NOT_SUPPORTED;
+		_uFailedCount++;
+		return;
 	}
 }
