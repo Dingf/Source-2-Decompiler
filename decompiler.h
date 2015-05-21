@@ -41,7 +41,7 @@ class S2Decompiler
 		S2Decompiler();
 		S2Decompiler(const std::vector<std::string>& szFileList);
 
-		void StartDecompile(const std::string& szDirectory);
+		void StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory);
 	private:
 		void ProcessDirectory(const std::string& szDirectory);
 		DecompileResult Decompile(const std::string& szPathname);
@@ -51,6 +51,7 @@ class S2Decompiler
 		void DecompileVTEX(const std::string& szFilename, const std::string& szOutputDirectory, bool bGenerateVTEX = true, bool bGenerateMipmaps = true);
 
 		std::string _szBaseDirectory;
+		std::string _szOutputDirectory;
 		std::vector<std::string> _szFileList;
 };
 

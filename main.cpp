@@ -12,13 +12,21 @@ std::string szDefaultPaths[] = { "C:\\Program Files\\Steam\\SteamApps\\common\\d
 int main(int argc, char ** argv)
 {
 	std::string szBasePath;
+	std::string szOutputPath = ".\\";
 	std::vector<std::string> szFileList;
 
-	for (int32_t i = 0; i < argc; i++)
+	for (int32_t i = 1; i < argc; i++)
 	{
 		if (strncmp(argv[i], "-d\0", 3) == 0)
+		{
 			if (i + 1 < argc)
 				szBasePath = std::string(argv[++i]);
+		}
+		else if (strncmp(argv[i], "-o\0", 3) == 0)
+		{
+			if (i + 1 < argc)
+				szOutputPath = std::string(argv[++i]);
+		}
 		else
 			szFileList.push_back(std::string(argv[i]));
 	}
@@ -36,6 +44,6 @@ int main(int argc, char ** argv)
 	}
 
 	S2Decompiler sDecompiler(szFileList);
-	sDecompiler.StartDecompile(szBasePath);
+	sDecompiler.StartDecompile(szBasePath, szOutputPath);
 	return 0;
 }

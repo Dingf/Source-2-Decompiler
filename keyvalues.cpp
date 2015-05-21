@@ -15,7 +15,6 @@ void ReadOffsetString(std::fstream& f, char *& sz)
 	char szBuffer[4];
 
 	f.read(szBuffer, 4);
-	std::cout << f.tellg() << " " << *(int32_t*)szBuffer << "\n";
 	if (*(int32_t*)szBuffer == 0)
 		sz = NULL;
 	else
@@ -46,7 +45,7 @@ void ReadKVBlock(std::fstream& f, KeyValues& kv, uint32_t uNameLength, uint32_t 
 		kv.name = new char *[kv.size];
 		kv.data = new char *[kv.size];
 		f.seekg(*(int32_t*)szBuffer - 8, ios::cur);
-		for (uint32_t i = 0; i < kv.size; ++i)
+		for (int32_t i = 0; i < kv.size; i++)
 		{
 			ReadOffsetString(f, kv.name[i]);
 			if (uNameLength > 4)

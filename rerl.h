@@ -11,6 +11,8 @@
 #include <fstream>
 #include "keyvalues.h"
 
+const char * GetExternalResourceName(const char * szRefID);
+
 void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo);
 
 #endif

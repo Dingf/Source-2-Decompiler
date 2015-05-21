@@ -46,9 +46,19 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 	}
 }
 
-void S2Decompiler::StartDecompile(const std::string& szDirectory)
+void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory)
 {
-	_szBaseDirectory = szDirectory;
+	_szBaseDirectory = szBaseDirectory;
+	_szOutputDirectory = szOutputDirectory;
+	std::vector<std::string> szNewFileList;
+	for (uint32_t i = 0; i < _szFileList.size(); i++)
+	{
+		if (bfs::is_regular_file(_szFileList[i]))
+			Decompile(_szFileList[i]);
+		else
+			szNewFileList.push_back(_szFileList[i]);
+	}
+	_szFileList = szNewFileList;
 	ProcessDirectory(_szBaseDirectory);
 }
 
@@ -82,9 +92,15 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 
 DecompileResult S2Decompiler::Decompile(const std::string& szPathname)
 {
+	std::string szFilename;
 	std::string szExtension = szPathname.substr(szPathname.find_last_of("."));
-	std::string szFilename = szPathname.substr(_szBaseDirectory.length());
-	std::string szNewDirectory = ".\\" + szFilename.substr(0, szFilename.find_last_of("."));
+
+	if (szPathname.find(_szBaseDirectory) != std::string::npos)
+		szFilename = szPathname.substr(_szBaseDirectory.length());
+	else
+		szFilename = szPathname.substr(szPathname.find_last_of("\\/") + 1);
+
+	std::string szNewDirectory = _szOutputDirectory + szFilename.substr(0, szFilename.find_last_of("."));
 	if (!bfs::is_directory(szNewDirectory))
 	{
 		if (!bfs::create_directories(bfs::path(szNewDirectory)))

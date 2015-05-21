@@ -4,6 +4,23 @@
 
 using std::ios;
 
+KeyValues* psLastRERLInfo = NULL;
+
+const char* GetExternalResourceName(const char* szRefID)
+{
+	if (psLastRERLInfo == NULL)
+		throw std::string("No RERL information was found. (Did you forget to process the RERL block first?)");
+
+	for (uint32_t i = 0; i < psLastRERLInfo->size; i++)
+	{
+		if (strncmp(szRefID, psLastRERLInfo->data[i], 8) == 0)
+		{
+			return psLastRERLInfo->name[i];
+		}
+	}
+	return NULL;
+}
+
 void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
 {
 	char szBuffer[4];
@@ -13,7 +30,7 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
 	f.seekg(*(int*)szBuffer, ios::cur);
-	f.read((char *)&sRERLInfo.size, 4);
+	f.read((char*)&sRERLInfo.size, 4);
 	sRERLInfo.name = new char *[sRERLInfo.size];
 	sRERLInfo.data = new char *[sRERLInfo.size];
 	for (uint32_t i = 0; i < sRERLInfo.size; ++i)
@@ -27,4 +44,6 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
 		f.seekg(p2 + 8);
 	}
 	f.seekg(p1 + 4);
+
+	psLastRERLInfo = &sRERLInfo;
 }

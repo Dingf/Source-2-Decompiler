@@ -17,7 +17,7 @@ struct KeyValues
 	{
 		if (name)
 		{
-			for (int i = 0; i < size; ++i)
+			for (int32_t i = 0; i < size; i++)
 			{
 				if (name[i])
 					delete[] name[i];
@@ -26,7 +26,7 @@ struct KeyValues
 		}
 		if (data)
 		{
-			for (int i = 0; i < size; ++i)
+			for (int32_t i = 0; i < size; i++)
 			{
 				if (data[i])
 					delete[] data[i];
@@ -34,8 +34,32 @@ struct KeyValues
 			delete[] data;
 		}
 	}
+	
+	const char* operator[](const char *szName) const
+	{
+		for (int32_t i = 0; i < size; i++)
+		{
+			if (strcmp(name[i], szName) == 0)
+			{
+				return data[i];
+			}
+		}
+		return NULL;
+	}
 
-	uint32_t size;
+	char* operator[](const char *szName)
+	{
+		for (int32_t i = 0; i < size; i++)
+		{
+			if (strcmp(name[i], szName) == 0)
+			{
+				return data[i];
+			}
+		}
+		return NULL;
+	}
+
+	int32_t size;
 	char ** name;
 	char ** data;
 };

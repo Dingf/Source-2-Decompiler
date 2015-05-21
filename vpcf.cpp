@@ -22,22 +22,17 @@ void S2Decompiler::DecompileVPCF(const std::string& szFilename, const std::strin
 {
 	char szBuffer[4];
 
-	int32_t i;
 	uint32_t nNumBlocks;
 
 	KeyValues sRERLInfo, sNTROInfo;
-	KeyValues* psParticleSystemTemplate = NULL;
-	KeyValues* psParticleOpTemplate = NULL;
-
 	KeyValues sParticleInfo;
 
 	std::fstream f;
-	std::streamoff p1, p2, p3;
+	std::streamoff p;
 	f.open(szFilename, ios::in | ios::binary);
 	if (!f.is_open())
 		throw std::string("Could not open file \"" + szFilename + "\" for reading.");
 
-	std::cout << "\n";
 	f.seekg(12);
 	f.read((char *)&nNumBlocks, 4);
 	for (nNumBlocks; nNumBlocks > 0; nNumBlocks--)
@@ -50,26 +45,16 @@ void S2Decompiler::DecompileVPCF(const std::string& szFilename, const std::strin
 		else if (strncmp(szBuffer, "DATA", 4) == 0)
 		{
 			f.read(szBuffer, 4);
-			p1 = f.tellg();
+			p = f.tellg();
 			f.seekg(*(int*)szBuffer - 4, ios::cur);
-
-			if ((psParticleSystemTemplate == NULL) || (psParticleOpTemplate == NULL))
-				throw std::string("Introspection data not found.");
 
 			ReadStructuredData(f, sParticleInfo);
 
-			f.seekg(p1 + 4);
+			f.seekg(p + 4);
 		}
 		else if (strncmp(szBuffer, "NTRO", 4) == 0)
 		{
 			ProcessNTROBlock(f, sNTROInfo);
-			for (uint32_t i = 0; i < sNTROInfo.size; i++)
-			{
-				if (strncmp(sNTROInfo.name[i], "CParticleSystemDefinition", 25) == 0)
-					psParticleSystemTemplate = (KeyValues*)sNTROInfo.data[i];
-				else if (strncmp(sNTROInfo.name[i], "CParticleOperatorInstance", 25) == 0)
-					psParticleOpTemplate = (KeyValues*)sNTROInfo.data[i];
-			}
 		}
 		else if (strncmp(szBuffer, "REDI", 4) == 0)
 		{
