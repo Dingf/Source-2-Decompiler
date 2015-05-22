@@ -14,19 +14,19 @@ using std::ios;
 
 std::map<std::string, std::string> szTexParamAliases =
 boost::assign::map_list_of
-	("g_tColor",              "TextureColor")
-	("g_tColor0",             "TextureColor0")
-	("g_tSpecular0",          "TextureReflectance0")
-	("g_tSpecular1",          "TextureReflectance1")
-	("g_tSpecular2",          "TextureReflectance2")
-	("g_tSpecular3",          "TextureReflectance3")
-	("g_tDetail",             "TextureDetail")
-	("g_tDetail2",            "TextureDetail2")
-	("g_tSpecularWarp",       "TextureSpecularWarp")
-	("g_tDiffuseWarp",        "TextureDiffuseWarp")
-	("g_tFresnelColorWarp3D", "TextureFresnelColorWarp3D")
-	("g_tCubeMap",            "TextureCubeMap")
-	("g_tEnvironmentMap",     "TextureEnvironmentMap");
+("g_tColor", "TextureColor")
+("g_tColor0", "TextureColor0")
+("g_tSpecular0", "TextureReflectance0")
+("g_tSpecular1", "TextureReflectance1")
+("g_tSpecular2", "TextureReflectance2")
+("g_tSpecular3", "TextureReflectance3")
+("g_tDetail", "TextureDetail")
+("g_tDetail2", "TextureDetail2")
+("g_tSpecularWarp", "TextureSpecularWarp")
+("g_tDiffuseWarp", "TextureDiffuseWarp")
+("g_tFresnelColorWarp3D", "TextureFresnelColorWarp3D")
+("g_tCubeMap", "TextureCubeMap")
+("g_tEnvironmentMap", "TextureEnvironmentMap");
 
 void S2Decompiler::DecompileVMAT(const std::string& szFilename, const std::string& szOutputDirectory)
 {
@@ -178,7 +178,7 @@ void S2Decompiler::DecompileVMAT(const std::string& szFilename, const std::strin
 		if ((szFileExt == "_tga_") || (szFileExt == "_psd_"))
 			szImageName = szImageName.substr(0, szImageName.length() - 18);
 		if (szResourceString.substr(szResourceString.length() - 23, 5) == "_z000")
-		szImageName = szImageName.substr(0, szImageName.length() - 5);
+			szImageName = szImageName.substr(0, szImageName.length() - 5);
 
 		szImageName = szImageName.substr(szImageName.find_last_of("\\/") + 1);
 		szImageName = szImageName.substr(0, szImageName.find_last_of(".")) + ".tga";
@@ -206,10 +206,10 @@ void S2Decompiler::DecompileVMAT(const std::string& szFilename, const std::strin
 		else if (szTexParamName == "g_tNormalSpecularMask")
 		{
 			std::string szImageName2 = szImageName.substr(0, szImageName.find_last_of(".")) + "_a.tga";
-			
+
 			SwapImageChannel(szOutputDirectory + "\\" + szImageName, szOutputDirectory + "\\" + szImageName, IMAGE_CHANNEL_ALPHA, IMAGE_CHANNEL_RED);
 			ExtractImageChannel(szOutputDirectory + "\\" + szImageName, szOutputDirectory + "\\" + szImageName2, IMAGE_CHANNEL_ALPHA);
-			
+
 			f << "\tTextureNormal \"" << szImageName << "\"\n";
 			f << "\tTextureSpecularMask \"" << szImageName2 << "\"\n";
 		}
@@ -282,7 +282,7 @@ void S2Decompiler::DecompileVMAT(const std::string& szFilename, const std::strin
 			std::string szImageName3 = szImageName.substr(0, szImageName.find_last_of(".")) + "_g.tga";
 
 			ExtractImageChannel(szOutputDirectory + "\\" + szImageName, szOutputDirectory + "\\" + szImageName3, IMAGE_CHANNEL_GREEN);
-			
+
 			if ((*sIntParams)["F_TRANSLUCENT"] != NULL)
 			{
 				ExtractImageChannel(szOutputDirectory + "\\" + szImageName, szOutputDirectory + "\\" + szImageName2, IMAGE_CHANNEL_ALPHA);

@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
 		}
 		else if (strncmp(argv[i], "-o\0", 3) == 0)
 		{
-			if ((i + 1 < argc) && (bfs::is_directory(argv[i + 1])))
+			if (i + 1 < argc)
 				szOutputPath = std::string(argv[++i]);
 		}
 		else
