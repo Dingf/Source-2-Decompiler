@@ -1,6 +1,10 @@
 #ifndef INC_S2DC_DECOMPILER_H
 #define INC_S2DC_DECOMPILER_H
 
+#ifdef _WIN32
+#pragma once
+#endif
+
 /* General Decompiler Notes:
 
    *Values are in little endian order and are integer values, unless stated otherwise.
@@ -21,31 +25,43 @@
 */
 
 #include <stdint.h>
+#include <vector>
+#include <map>
 #include <string>
 #include <fstream>
-#include <vector>
+#include "keyvalues.h"
 #include "rerl.h"
 #include "ntro.h"
+
+enum DecompilerFlag
+{
+	DECOMPILER_FLAG_SILENT_DECOMPILE = 1,    //Don't print output and don't count the result towards success/failures
+	DECOMPILER_FLAG_VTEX_NO_VTEX_FILE = 2,
+	DECOMPILER_FLAG_VTEX_NO_MIPMAPS = 4,
+};
 
 class S2Decompiler
 {
 	public:
-		S2Decompiler();
+		typedef void (S2Decompiler::*OutputFunction)(const KeyValues&, std::fstream&, const std::string&);
+
 		S2Decompiler(const std::vector<std::string>& szFileList);
 
-		void StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory);
+		void StartDecompile(const std::string& szInputDirectory, const std::string& szOutputDirectory);
 	private:
 		void ProcessDirectory(const std::string& szDirectory);
-		void Decompile(const std::string& szPathname);
+		void Decompile(const std::string& szPathname, const std::string& szOverrideDirectory = "");
 
-		void DecompileVMAT(const std::string& szFilename, const std::string& szOutputDirectory);
-		void DecompileVPCF(const std::string& szFilename, const std::string& szOutputDirectory);
-		void DecompileVTEX(const std::string& szFilename, const std::string& szOutputDirectory, bool bGenerateVTEX = true, bool bGenerateMipmaps = true);
+		void OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVMDL(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
 
-		uint32_t _uSuccessCount, _uFailedCount;
-		std::string _szBaseDirectory;
-		std::string _szOutputDirectory;
+		uint32_t _nDecompilerFlags;
+		uint32_t _nSuccessCount, _nFailedCount;
+		std::string _szInputDirectory, _szOutputDirectory;
 		std::vector<std::string> _szFileList;
+		std::map<std::string, OutputFunction> _OutputMap;
 };
 
 #endif

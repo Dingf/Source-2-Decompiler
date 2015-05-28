@@ -1,22 +1,11 @@
 #ifndef INC_S2DC_VPCF_DECOMPILER_H
 #define INC_S2DC_VPCF_DECOMPILER_H
 
-/* VPCF_C File Format
+#ifdef _WIN32
+#pragma once
+#endif
 
-   NTRO Block
-     4 bytes:  Introspection version
-	 4 bytes:  Offset to referenced structs
-	   -> 4 bytes:  Introspection version
-	   -> 4 bytes:  ID
-	   -> 4 bytes:  Offset to name
-	   -> 4 bytes:  Disk CRC
-	   -> 4 bytes:  User version
-	   -> 2 bytes:  Disk size
-	   -> 2 bytes:  Alignment
-	   -> 4 bytes:  Base struct ID
-	 4 bytes:  Number of referenced structs
-	 4 bytes:  Offset to (unknown)
-	 4 bytes:  Number of (unknown)
+/* VPCF_C File Format
 
    DATA Block
      4 bytes:   ID (always 0xAAA29DC3)

@@ -1,11 +1,14 @@
 #include <stdint.h>
-#include <iostream>
-#include <string>
 #include <vector>
+#include <string>
+#include <iostream>
 #include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 #include "decompiler.h"
 
 namespace bfs = boost::filesystem;
+
+using std::ios;
 
 bool CheckFilenameMatch(const char * sz1, const char * sz2)
 {
@@ -19,42 +22,40 @@ bool CheckFilenameMatch(const char * sz1, const char * sz2)
 	{
 		if (*sz1 == '\0')
 			return (*(sz2 + 1) == '\0');
-		
 		return CheckFilenameMatch(sz1 + 1, sz2) || CheckFilenameMatch(sz1, sz2 + 1);
 	}
 	return false;
 }
 
-S2Decompiler::S2Decompiler()
-{
-	_uSuccessCount = _uFailedCount = 0;
-	_szFileList.push_back("*.vtex_c");
-	_szFileList.push_back("*.vmat_c");
-	_szFileList.push_back("*.vpcf_c");
-	_szFileList.push_back("*.vmdl_c");
-	_szFileList.push_back("*.vsnd_c");
-}
-
 S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 {
-	_uSuccessCount = _uFailedCount = 0;
+	_nDecompilerFlags = 0;
+	_nSuccessCount = _nFailedCount = 0;
 	_szFileList = szFileList;
 	if (_szFileList.empty())
 	{
-		_szFileList.push_back("*.vtex_c");
 		_szFileList.push_back("*.vmat_c");
-		_szFileList.push_back("*.vpcf_c");
 		_szFileList.push_back("*.vmdl_c");
+		_szFileList.push_back("*.vpcf_c");
 		_szFileList.push_back("*.vsnd_c");
+		_szFileList.push_back("*.vtex_c");
 	}
+
+	_OutputMap[".vmat_c"] = &S2Decompiler::OutputVMAT;
+	//_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
+	_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
+	//_OutputMap[".vsnd_c"] = &S2Decompiler::OutputVSND;
+	_OutputMap[".vtex_c"] = &S2Decompiler::OutputVTEX;
 }
 
-void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std::string& szOutputDirectory)
+void S2Decompiler::StartDecompile(const std::string& szInputDirectory, const std::string& szOutputDirectory)
 {
-	_szBaseDirectory = szBaseDirectory;
-	if (_szBaseDirectory.find_last_of("\\/") != _szBaseDirectory.length() - 1)
-		_szBaseDirectory += "\\";
+	_szInputDirectory = szInputDirectory;
+	boost::algorithm::to_lower(_szInputDirectory);
+	if (_szInputDirectory.find_last_of("\\/") != _szInputDirectory.length() - 1)
+		_szInputDirectory += "\\";
 	_szOutputDirectory = szOutputDirectory;
+	boost::algorithm::to_lower(_szOutputDirectory);
 	if (_szOutputDirectory.find_last_of("\\/") != _szOutputDirectory.length() - 1)
 		_szOutputDirectory += "\\";
 
@@ -62,7 +63,16 @@ void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std:
 	for (uint32_t i = 0; i < _szFileList.size(); i++)
 	{
 		if (bfs::is_regular_file(_szFileList[i]))
-			Decompile(_szFileList[i]);
+		{
+			try
+			{
+				Decompile(_szFileList[i]);
+			}
+			catch (const std::string& s)
+			{
+				std::cerr << "[S2DC]: " << s << "\n";
+			}
+		}
 		else
 			szNewFileList.push_back(_szFileList[i]);
 	}
@@ -71,13 +81,13 @@ void S2Decompiler::StartDecompile(const std::string& szBaseDirectory, const std:
 	{
 		std::cout << "[S2DC]: Searching for matching files...\n";
 		std::cout << "[S2DC]: Please be patient, as this may take a while.\n\n";
-		ProcessDirectory(_szBaseDirectory);
+		ProcessDirectory(_szInputDirectory);
 	}
 	std::cout << "\n[S2DC]: Finished decompiling!\n";
-	if (_uSuccessCount + _uFailedCount == 0)
+	if (_nSuccessCount + _nFailedCount == 0)
 		std::cout << "[S2DC]: No matching files were found.\n";
 	else
-		std::cout << "[S2DC]: " << _uSuccessCount << "/" << _uSuccessCount + _uFailedCount << " files were successfully decompiled.\n";
+		std::cout << "[S2DC]: " << _nSuccessCount << "/" << _nSuccessCount + _nFailedCount << " files were successfully decompiled.\n";
 	
 }
 
@@ -101,8 +111,16 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 				{
 					if (CheckFilenameMatch(szFilename.c_str(), _szFileList[i].c_str()) == true)
 					{
-						Decompile(current->path().string());
+						try
+						{
+							Decompile(current->path().string());
+						}
+						catch (const std::string& s)
+						{
+							std::cerr << "[S2DC]: " << s << "\n";
+						}
 						break;
+
 					}
 				}
 			}
@@ -110,85 +128,123 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 	}
 }
 
-void S2Decompiler::Decompile(const std::string& szPathname)
+void S2Decompiler::Decompile(const std::string& szPathname, const std::string& szOverrideDirectory)
 {
+	char szBuffer[4];
+
+	bool bSilentDecompile = _nDecompilerFlags & DECOMPILER_FLAG_SILENT_DECOMPILE;
+
+	uint32_t nFileSize, nBlockCount;
+	KeyValues RERLBlock, NTROBlock, DATABlock, ExtraBlock;
+
 	std::string szFilename;
 	std::string szExtension = szPathname.substr(szPathname.find_last_of("."));
-
-	if (szPathname.find(_szBaseDirectory) != std::string::npos)
-		szFilename = szPathname.substr(_szBaseDirectory.length());
+	if (szPathname.find(_szInputDirectory) != std::string::npos)
+		szFilename = szPathname.substr(_szInputDirectory.length());
 	else
 		szFilename = szPathname.substr(szPathname.find_last_of("\\/") + 1);
 
-	std::string szNewDirectory = _szOutputDirectory + szFilename.substr(0, szFilename.find_last_of("."));
-	if (!bfs::is_directory(szNewDirectory))
+	std::string szResourceName = szFilename.substr(0, szFilename.length() - 7);
+	if (szFilename.length() >= 20)
 	{
-		if (!bfs::create_directories(bfs::path(szNewDirectory)))
+		std::string szFileExt = szFilename.substr(szFilename.length() - 20, 5);
+		if ((szFileExt == "_tga_") || (szFileExt == "_psd_"))
+			szResourceName = szResourceName.substr(0, szResourceName.length() - 13);
+		std::string wtf = szResourceName.substr(szResourceName.length() - 5, 5);
+		if ((szResourceName.length() >= 5) && (szResourceName.substr(szResourceName.length() - 5, 5) == "_z000"))
+			szResourceName = szResourceName.substr(0, szResourceName.length() - 5);
+	}
+
+	std::string szDecompileDirectory;
+	if (szOverrideDirectory.empty())
+		szDecompileDirectory = _szOutputDirectory + szResourceName.substr(0, szResourceName.find_last_of("."));
+	else
+		szDecompileDirectory = szOverrideDirectory;
+
+	if (!bfs::is_directory(szDecompileDirectory))
+	{
+		if (!bfs::create_directories(bfs::path(szDecompileDirectory)))
 		{
-			std::cerr << "[S2DC]: Could not create directory \"" + szNewDirectory + "\".";
-			_uFailedCount++;
-			return;
+			if (!bSilentDecompile)
+				_nFailedCount++;
+			throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
 		}
 	}
 
-	std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
-	if (szExtension == ".vtex_c")
+	if (!bSilentDecompile)
+		std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
+	std::fstream f;
+	f.open(_szInputDirectory + szFilename, ios::in | ios::binary);
+	if (!f.is_open())
+		throw std::string("Could not open file \"" + szFilename + "\" for reading.");
+
+	f.read((char *)&nFileSize, 4);
+	f.seekg(12);
+	f.read((char *)&nBlockCount, 4);
+	for (nBlockCount; nBlockCount > 0; nBlockCount--)
+	{
+		f.read(szBuffer, 4);
+		if (strncmp(szBuffer, "RERL", 4) == 0)
+		{
+			ProcessRERLBlock(f, RERLBlock);
+		}
+		else if (strncmp(szBuffer, "NTRO", 4) == 0)
+		{
+			ProcessNTROBlock(f, NTROBlock);
+		}
+		else if (strncmp(szBuffer, "DATA", 4) == 0)
+		{
+			f.read(szBuffer, 4);
+			std::streamoff p = f.tellg();
+			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+			ReadStructuredData(f, DATABlock, (KeyValues *)NTROBlock.data[0]);
+		}
+		else if (strncmp(szBuffer, "REDI", 4) == 0)
+		{
+			f.seekg(8, ios::cur);
+		}
+		else
+		{
+			throw std::string("Encountered invalid block type.");
+		}
+	}
+	f.seekg(nFileSize);
+
+	ClearLastRERLEntry();
+	ClearLastNTROEntry();
+
+	std::map<std::string, OutputFunction>::iterator i = _OutputMap.find(szExtension);
+	if (i != _OutputMap.end())
 	{
 		try
 		{
-			DecompileVTEX(_szBaseDirectory + szFilename, szNewDirectory);
-			std::cout << "done!\n";
-			_uSuccessCount++;
+			(this->*(i->second))(DATABlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
+			if (!bSilentDecompile)
+			{
+				std::cout << "done!\n";
+				_nSuccessCount++;
+			}
 		}
-		catch (std::string& s)
+		catch (const std::string& s)
 		{
-			std::cout << "failed!\n";
-			std::cerr << "[VTEX]: " << s << "\n";
-			_uFailedCount++;
+			if (!bSilentDecompile)
+			{
+				std::cout << "failed!\n";
+				_nFailedCount++;
+			}
+			throw s;
 		}
 	}
-	else if (szExtension == ".vmat_c")
-	{
-		try
-		{
-			DecompileVMAT(_szBaseDirectory + szFilename, szNewDirectory);
-			std::cout << "done!\n";
-			_uSuccessCount++;
-		}
-		catch (std::string& s)
-		{
-			std::cout << "failed!\n";
-			std::cerr << "[VMAT]: " << s << "\n";
-			_uFailedCount++;
-		}
-	}
-	else if (szExtension == ".vpcf_c")
-	{
-		try
-		{
-			DecompileVPCF(_szBaseDirectory + szFilename, szNewDirectory);
-			std::cout << "done!\n";
-			_uSuccessCount++;
-		}
-		catch (std::string& s)
-		{
-			std::cout << "failed!\n";
-			std::cerr << "[VPCF]: " << s << "\n";
-			_uFailedCount++;
-		}
-	}
-	/*else if (szExtension == ".vmdl_c")
-	{
-	}
-	else if (szExtension == ".vsnd_c")
-	{
-	}*/
 	else
 	{
-		std::cout << "failed!\n";
-		std::cerr << "[S2DC]: Unsupported file type \"" + szExtension + "\".\n";
-		bfs::remove_all(szNewDirectory);
-		_uFailedCount++;
-		return;
+		bfs::remove_all(szDecompileDirectory);
+		if (!bSilentDecompile)
+		{
+			std::cout << "failed!\n";
+			_nFailedCount++;
+		}
+		throw std::string("Unsupported file type \"" + szExtension + "\".\n");
 	}
+
+	f.close();
 }

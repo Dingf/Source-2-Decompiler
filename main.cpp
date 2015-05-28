@@ -13,7 +13,7 @@ std::string szDefaultPaths[] = { "c:\\program files\\steam\\steamapps\\common\\d
 
 int main(int argc, char ** argv)
 {
-	std::string szBasePath;
+	std::string szInputPath;
 	std::string szOutputPath = ".\\";
 	std::vector<std::string> szFileList;
 
@@ -22,7 +22,7 @@ int main(int argc, char ** argv)
 		if (strncmp(argv[i], "-d\0", 3) == 0)
 		{
 			if ((i + 1 < argc) && (bfs::is_directory(argv[i + 1])))
-				szBasePath = std::string(argv[++i]);
+				szInputPath = std::string(argv[++i]);
 		}
 		else if (strncmp(argv[i], "-o\0", 3) == 0)
 		{
@@ -48,21 +48,19 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 
-	if (szBasePath.empty())
+	if (szInputPath.empty())
 	{
 		for (uint32_t i = 0; i < sizeof(szDefaultPaths) / sizeof(char *); ++i)
 		{
 			if (bfs::is_directory(szDefaultPaths[i]))
 			{
-				szBasePath = szDefaultPaths[i];
+				szInputPath = szDefaultPaths[i];
 				break;
 			}
 		}
 	}
 
-	boost::algorithm::to_lower(szBasePath);
-	boost::algorithm::to_lower(szOutputPath);
 	S2Decompiler sDecompiler(szFileList);
-	sDecompiler.StartDecompile(szBasePath, szOutputPath);
+	sDecompiler.StartDecompile(szInputPath, szOutputPath);
 	return 0;
 }

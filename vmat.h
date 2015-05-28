@@ -1,6 +1,10 @@
 #ifndef INC_S2DC_VMAT_DECOMPILER_H
 #define INC_S2DC_VMAT_DECOMPILER_H
 
+#ifdef _WIN32
+#pragma once
+#endif
+
 /* VMAT_C File Format
 
    DATA Block

@@ -4,24 +4,24 @@
 
 using std::ios;
 
-KeyValues* psLastRERLInfo = NULL;
+KeyValues* pLastRERLInfo = NULL;
 
-const char* GetExternalResourceName(const char* szRefID)
+const char* GetExternalResourceName(const char * szRefID)
 {
-	if (psLastRERLInfo == NULL)
+	if (pLastRERLInfo == NULL)
 		throw std::string("No RERL information was found. (Did you forget to process the RERL block first?)");
 
-	for (int32_t i = 0; i < psLastRERLInfo->size; i++)
+	for (uint32_t i = 0; i < pLastRERLInfo->size; i++)
 	{
-		if (strncmp(szRefID, psLastRERLInfo->data[i], 8) == 0)
+		if (strncmp(szRefID, pLastRERLInfo->data[i], 8) == 0)
 		{
-			return psLastRERLInfo->name[i];
+			return pLastRERLInfo->name[i];
 		}
 	}
 	return NULL;
 }
 
-void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
+void ProcessRERLBlock(std::fstream& f, KeyValues& RERLInfo)
 {
 	char szBuffer[4];
 
@@ -29,21 +29,25 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& sRERLInfo)
 
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
-	f.seekg(*(int*)szBuffer, ios::cur);
-	f.read((char*)&sRERLInfo.size, 4);
-	sRERLInfo.name = new char *[sRERLInfo.size];
-	sRERLInfo.data = new char *[sRERLInfo.size];
-	for (int32_t i = 0; i < sRERLInfo.size; ++i)
+	f.seekg(*(int32_t *)szBuffer, ios::cur);
+	f.read(szBuffer, 4);
+	RERLInfo = KeyValues(*(uint32_t *)szBuffer);
+	for (int32_t i = 0; i < RERLInfo.size; ++i)
 	{
-		sRERLInfo.data[i] = new char[9];
-		f.read(sRERLInfo.data[i], 8);
-		sRERLInfo.data[i][8] = '\0';
+		RERLInfo.data[i] = new char[9];
+		f.read(RERLInfo.data[i], 8);
+		RERLInfo.data[i][8] = '\0';
 		p2 = f.tellg();
 
-		ReadOffsetString(f, sRERLInfo.name[i]);
+		ReadOffsetString(f, RERLInfo.name[i]);
 		f.seekg(p2 + 8);
 	}
 	f.seekg(p1 + 4);
 
-	psLastRERLInfo = &sRERLInfo;
+	pLastRERLInfo = &RERLInfo;
+}
+
+void ClearLastRERLEntry()
+{
+	pLastRERLInfo = NULL;
 }

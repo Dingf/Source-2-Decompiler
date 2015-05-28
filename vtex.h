@@ -1,6 +1,10 @@
 #ifndef INC_S2DC_VTEX_DECOMPILER_H
 #define INC_S2DC_VTEX_DECOMPILER_H
 
+#ifdef _WIN32
+#pragma once
+#endif
+
 /* VTEX_C File Format
 
    DATA Block
@@ -16,7 +20,7 @@
 	 4 bytes:   Offset to sheet data
 	   -> 4 bytes:  Offset to sequence info
 	     --> 4 bytes:  Sequence ID
-		 --> 4 bytes:  Flags (?)
+		 --> 4 bytes:  Flags
 		   ---> 0x01:  Clamp (If not clamped, sequence animation will loop)
 		   ---> 0x02:  Alpha Crop
          --> 4 bytes:  Offset to frame data
@@ -86,8 +90,8 @@ enum ImageChannel
 	SIZEOF_IMAGE_CHANNEL
 };
 
-void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16_t uWidth, uint16_t uHeight, uint8_t uMipLevels, bool bGenerateMipmaps);
-void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_t uWidth, uint16_t uHeight, uint8_t uMipLevels, uint8_t uImageFormat, bool bGenerateMipmaps);
+void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, bool bGenerateMipmaps);
+void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, uint8_t uImageFormat, bool bGenerateMipmaps);
 void ExtractFrameImage(const std::string& szImageName, const std::string& szFilenameOut, float * szCoords);
 void ExtractSheetData(std::fstream& in, const std::string& szImageName, const std::string& szFilenameOut);
 void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameOut);

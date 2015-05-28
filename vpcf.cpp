@@ -1,4 +1,4 @@
-#include "string.h"
+#include <string.h>
 #include <stdint.h>
 #include <map>
 #include <string>
@@ -6,150 +6,105 @@
 #include "decompiler.h"
 #include "keyvalues.h"
 
-#include <iostream>
-
 using std::ios;
 
-bool WriteGenericVPCFData(std::fstream& f, KeyValues& kv, uint32_t uIndex)
+bool OutputGenericVPCFData(std::fstream& f, const KeyValues& kv, uint32_t nIndex)
 {
-	uint16_t uDataType = *(uint16_t*)(&kv.name[uIndex][strlen(kv.name[uIndex]) + 1]);
-	if (uDataType == NTRO_DATA_TYPE_ENUM)
-		f << "symbol " << kv.name[uIndex] << " = " << *(uint32_t*)kv.data[uIndex] << "\n";
-	else if ((uDataType == NTRO_DATA_TYPE_HANDLE) || (uDataType == NTRO_DATA_TYPE_STRING) || (uDataType == NTRO_DATA_TYPE_NAME))
-		f << "string " << kv.name[uIndex] << " = \"" << ((kv.data[uIndex] == NULL) ? "" : kv.data[uIndex]) << "\"\n";
-	else if (uDataType == NTRO_DATA_TYPE_INTEGER)
-		f << "int " << kv.name[uIndex] << " = " << *(int32_t*)kv.data[uIndex] << "\n";
-	else if (uDataType == NTRO_DATA_TYPE_FLOAT)
-		f << "float " << kv.name[uIndex] << " = " << std::fixed << *(float*)kv.data[uIndex] << "\n";
-	else if (uDataType == NTRO_DATA_TYPE_VECTOR3)
-		f << "float(3) " << kv.name[uIndex] << " = ( " << std::fixed << *(float*)&kv.data[uIndex][0] << ", " << *(float*)&kv.data[uIndex][4] << ", " << *(float*)&kv.data[uIndex][8] << " )\n";
-	else if (uDataType == NTRO_DATA_TYPE_VECTOR4)
-		f << "int(4) " << kv.name[uIndex] << " = ( " << std::fixed << (uint32_t)*(uint8_t*)&kv.data[uIndex][0] << ", " << (uint32_t)*(uint8_t*)&kv.data[uIndex][1] << ", " << (uint32_t)*(uint8_t*)&kv.data[uIndex][2] << ", " << (uint32_t)*(uint8_t*)&kv.data[uIndex][3] << " )\n";
-	else if (uDataType == NTRO_DATA_TYPE_BOOLEAN)
-		f << "bool " << kv.name[uIndex] << " = " << (*(bool*)kv.data[uIndex] ? "true" : "false") << "\n";
+	uint16_t nDataType = *(uint16_t*)(&kv.name[nIndex][strlen(kv.name[nIndex]) + 1]);
+	if (nDataType == NTRO_DATA_TYPE_ENUM)
+		f << "symbol " << kv.name[nIndex] << " = " << *(uint32_t*)kv.data[nIndex] << "\n";
+	else if ((nDataType == NTRO_DATA_TYPE_HANDLE) || (nDataType == NTRO_DATA_TYPE_STRING) || (nDataType == NTRO_DATA_TYPE_NAME))
+		f << "string " << kv.name[nIndex] << " = \"" << ((kv.data[nIndex] == NULL) ? "" : kv.data[nIndex]) << "\"\n";
+	else if (nDataType == NTRO_DATA_TYPE_INTEGER)
+		f << "int " << kv.name[nIndex] << " = " << *(int32_t*)kv.data[nIndex] << "\n";
+	else if (nDataType == NTRO_DATA_TYPE_FLOAT)
+		f << "float " << kv.name[nIndex] << " = " << std::fixed << *(float*)kv.data[nIndex] << "\n";
+	else if (nDataType == NTRO_DATA_TYPE_VECTOR3)
+		f << "float(3) " << kv.name[nIndex] << " = ( " << std::fixed << *(float*)&kv.data[nIndex][0] << ", " << *(float*)&kv.data[nIndex][4] << ", " << *(float*)&kv.data[nIndex][8] << " )\n";
+	else if (nDataType == NTRO_DATA_TYPE_VECTOR4)
+		f << "int(4) " << kv.name[nIndex] << " = ( " << std::fixed << (uint32_t)*(uint8_t*)&kv.data[nIndex][0] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][1] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][2] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][3] << " )\n";
+	else if (nDataType == NTRO_DATA_TYPE_BOOLEAN)
+		f << "bool " << kv.name[nIndex] << " = " << (*(bool*)kv.data[nIndex] ? "true" : "false") << "\n";
 	else
 		return false;
 	return true;
 }
 
-void S2Decompiler::DecompileVPCF(const std::string& szFilename, const std::string& szOutputDirectory)
+void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
-	char szBuffer[4];
-
-	uint32_t nNumBlocks;
-
-	KeyValues sRERLInfo, sNTROInfo;
-	KeyValues sVPCFInfo;
-
-	std::fstream f;
-	std::streamoff p;
-	f.open(szFilename, ios::in | ios::binary);
-	if (!f.is_open())
-		throw std::string("Could not open file \"" + szFilename + "\" for reading.");
-
-	f.seekg(12);
-	f.read((char *)&nNumBlocks, 4);
-	for (nNumBlocks; nNumBlocks > 0; nNumBlocks--)
-	{
-		f.read(szBuffer, 4);
-		if (strncmp(szBuffer, "RERL", 4) == 0)
-		{
-			ProcessRERLBlock(f, sRERLInfo);
-		}
-		else if (strncmp(szBuffer, "DATA", 4) == 0)
-		{
-			f.read(szBuffer, 4);
-			p = f.tellg();
-			f.seekg(*(int*)szBuffer - 4, ios::cur);
-
-			ReadStructuredData(f, sVPCFInfo);
-
-			f.seekg(p + 4);
-		}
-		else if (strncmp(szBuffer, "NTRO", 4) == 0)
-		{
-			ProcessNTROBlock(f, sNTROInfo);
-		}
-		else if (strncmp(szBuffer, "REDI", 4) == 0)
-		{
-			f.seekg(8, ios::cur);
-		}
-		else
-		{
-			throw std::string("Encountered invalid block type.");
-		}
-	}
-	f.close();
-
-	std::string szOutputName = szFilename.substr(szFilename.find_last_of("\\/") + 1);
-	szOutputName = szOutputName.substr(0, szOutputName.find_last_of(".")) + ".vpcf";
-
-	f.open(szOutputDirectory + "\\" + szOutputName, ios::out);
-	if (!f.is_open())
-		throw std::string("Could not open file \"" + szOutputDirectory + "\\" + szOutputName + "\" for writing.");
+	std::fstream out;
+	out.open(szOutputName, ios::out);
+	if (!out.is_open())
+		throw std::string("Could not open file \"" + szOutputName + "\" for writing.");
 
 	f.precision(6);
-	f << "// This file has been auto-generated by Source 2 Decompiler\n";
-	f << "// https://github.com/Dingf/Source-2-Decompiler\n";
-	f << "<!-- schema text{7e125a45-3d83-4043-b292-9e24f8ef27b4} generic {198980d8-3a93-4919-b4c6-dd1fb07a3a4b} -->\n\n";
-	f << "CParticleSystemDefinition CParticleSystemDefinition_0\n{\n";
-	for (int32_t i = 0; i < sVPCFInfo.size; i++)
+	out << "// This file has been auto-generated by Source 2 Decompiler\n";
+	out << "// https://github.com/Dingf/Source-2-Decompiler\n";
+	out << "<!-- schema text{7e125a45-3d83-4043-b292-9e24f8ef27b4} generic {198980d8-3a93-4919-b4c6-dd1fb07a3a4b} -->\n\n";
+	out << "CParticleSystemDefinition CParticleSystemDefinition_0\n{\n";
+	for (uint32_t i = 0; i < DataBlock.size; i++)
 	{
-		uint16_t uDataType = *(uint16_t*)(&sVPCFInfo.name[i][strlen(sVPCFInfo.name[i]) + 1]);
+		uint16_t nDataType = *(uint16_t*)(&DataBlock.name[i][strlen(DataBlock.name[i]) + 1]);
 
-		f << "\t";
-		if ((!WriteGenericVPCFData(f, sVPCFInfo, i)) && (uDataType == NTRO_DATA_TYPE_STRUCT))
+		out << "\t";
+		if ((!OutputGenericVPCFData(out, DataBlock, i)) && (nDataType == NTRO_DATA_TYPE_STRUCT))
 		{
-			f.seekp(-1, ios::cur);
-			if (strncmp(sVPCFInfo.name[i], "m_Children\0", 11) == 0)
+			out.seekp(-1, ios::cur);
+			if (strncmp(DataBlock.name[i], "m_Children\0", 11) == 0)
 			{
-				KeyValues* sChildren = (KeyValues*)sVPCFInfo.data[i];
-				f << "\tParticleChildrenInfo_t[] m_Children =\n\t[\n";
-				for (int32_t j = 0; j < sChildren->size; j++)
+				KeyValues * pChildren = (KeyValues*)DataBlock.data[i];
+				out << "\tParticleChildrenInfo_t[] m_Children =\n\t[\n";
+				for (uint32_t j = 0; j < pChildren->size; j++)
 				{
-					f << "\t\t" << sChildren->name[j] << "\n\t\t{\n";
-					KeyValues* sChild = (KeyValues*)sChildren->data[j];
-					for (int32_t k = 0; k < sChild->size; k++)
+					out << "\t\t" << pChildren->name[j] << "\n\t\t{\n";
+					KeyValues * pChild = (KeyValues*)pChildren->data[j];
+					for (uint32_t k = 0; k < pChild->size; k++)
 					{
-						f << "\t\t\t";
-						WriteGenericVPCFData(f, *sChild, k);
+						out << "\t\t\t";
+						OutputGenericVPCFData(out, *pChild, k);
 					}
-					f << "\t\t}" << ((j == sChildren->size - 1) ? "\n" : ",\n");
+					out << "\t\t}" << ((j == pChildren->size - 1) ? "\n" : ",\n");
 				}
-				f << "\t]\n";
+				out << "\t]\n";
 			}
 			else
 			{
-				KeyValues* sOperators = (KeyValues*)sVPCFInfo.data[i];
-				f << "\tCParticleOperator*[] " << sVPCFInfo.name[i] << " =\n\t[\n";
-				for (int32_t j = 0; j < sOperators->size; j++)
-					f << "\t\t&" << sOperators->name[j] << "_" << j << ((j < sOperators->size - 1) ? ",\n" : "\n");
-				f << "\t]\n";
-			}
-		}
-	}
-	f << "}\n";
-
-
-	for (int32_t i = 0; i < sVPCFInfo.size; i++)
-	{
-		uint16_t uDataType = *(uint16_t*)(&sVPCFInfo.name[i][strlen(sVPCFInfo.name[i]) + 1]);
-		if ((uDataType == NTRO_DATA_TYPE_STRUCT) && (strncmp(sVPCFInfo.name[i], "m_Children\0", 11) != 0))
-		{
-			KeyValues* sOperators = (KeyValues*)sVPCFInfo.data[i];
-			for (int32_t j = 0; j < sOperators->size; j++)
-			{
-				f << "\n" << sOperators->name[j] << " " << sOperators->name[j] << "_" << j << "\n{\n";
-				KeyValues* sOperator = (KeyValues*)sOperators->data[j];
-				for (int32_t k = 0; k < sOperator->size; k++)
+				KeyValues * pOperators = (KeyValues*)DataBlock.data[i];
+				out << "\tCParticleOperator*[] " << DataBlock.name[i] << " =\n\t[\n";
+				for (int32_t j = 0; j < pOperators->size; j++)
 				{
-					f << "\t";
-					WriteGenericVPCFData(f, *sOperator, k);
+					KeyValues * pOperator = (KeyValues *)pOperators->data[j];
+					out << "\t\t&" << pOperator->name[0] << "_" << j << ((j < pOperators->size - 1) ? ",\n" : "\n");
 				}
-				f << "}\n";
+				out << "\t]\n";
 			}
 		}
 	}
-	f.close();
+	out << "}\n";
 
+
+	for (uint32_t i = 0; i < DataBlock.size; i++)
+	{
+		uint16_t nDataType = *(uint16_t*)(&DataBlock.name[i][strlen(DataBlock.name[i]) + 1]);
+		if ((nDataType == NTRO_DATA_TYPE_STRUCT) && (strncmp(DataBlock.name[i], "m_Children\0", 11) != 0))
+		{
+			KeyValues * pOperators = (KeyValues*)DataBlock.data[i];
+			for (uint32_t j = 0; j < pOperators->size; j++)
+			{
+				KeyValues * pOperator = (KeyValues*)pOperators->data[j];
+				KeyValues * pOperatorData = (KeyValues *)pOperator->data[0];
+				out << "\n" << pOperator->name[0] << " " << pOperator->name[0] << "_" << j << "\n{\n";
+
+				bool bLastOutputSuccess = true;
+				for (uint32_t k = 0; k < pOperatorData->size; k++)
+				{
+					if (bLastOutputSuccess)
+						out << "\t";
+					bLastOutputSuccess = OutputGenericVPCFData(out, *pOperatorData, k);
+				}
+				out << "}\n";
+			}
+		}
+	}
+	out.close();
 }

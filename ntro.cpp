@@ -1,26 +1,27 @@
 #include <stdint.h>
 #include <stack>
+#include <string>
 #include <fstream>
 #include "keyvalues.h"
 #include "ntro.h"
 #include "rerl.h"
 
-//#include <iostream>
+#include <iostream>
 
 using std::ios;
 
-KeyValues * psLastNTROInfo = NULL;
+KeyValues * pLastNTROInfo = NULL;
 
-KeyValues* GetNTROResourceDataByID(uint32_t uID)
+KeyValues * GetNTROResourceDataByID(uint32_t uID)
 {
-	if (!psLastNTROInfo)
+	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
-	for (uint32_t i = 0; i < psLastNTROInfo->size; i++)
+	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
 	{
-		if (uID == *(uint32_t*)&psLastNTROInfo->name[i][strlen(psLastNTROInfo->name[i]) + 1])
+		if (uID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
 		{
-			return (KeyValues*)psLastNTROInfo->data[i];
+			return (KeyValues *)pLastNTROInfo->data[i];
 		}
 	}
 	return NULL;
@@ -28,363 +29,355 @@ KeyValues* GetNTROResourceDataByID(uint32_t uID)
 
 const char* GetNTROResourceNameByID(uint32_t uID)
 {
-	if (!psLastNTROInfo)
+	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
-	for (uint32_t i = 0; i < psLastNTROInfo->size; i++)
+	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
 	{
-		if (uID == *(uint32_t*)&psLastNTROInfo->name[i][strlen(psLastNTROInfo->name[i]) + 1])
+		if (uID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
 		{
-			return psLastNTROInfo->name[i];
+			return pLastNTROInfo->name[i];
 		}
 	}
 	return NULL;
 }
 
+uint32_t GetNTROBaseStructByID(uint32_t nID)
+{
+	if (!pLastNTROInfo)
+		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
-void ProcessNTROBlock(std::fstream& f, KeyValues& sNTROInfo)
+	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
+	{
+		if (nID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
+		{
+			return *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 5];
+		}
+	}
+	return 0;
+}
+
+void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 {
 	char szBuffer[4];
 
 	int32_t i, j, k;
-	uint32_t uStructSize, uEnumSize;
+	uint32_t nStructSize, nEnumSize;
 
 	std::streamoff p1, p2, p3, p4;
 
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
-	f.seekg(*(int*)szBuffer + 4, ios::cur);
-	f.read((char*)&uStructSize, 4);
+	f.seekg(*(int32_t *)szBuffer + 4, ios::cur);
+	f.read((char *)&nStructSize, 4);
 	p4 = f.tellg();
 	f.seekg(4, ios::cur);
-	f.read((char*)&uEnumSize, 4);
+	f.read((char *)&nEnumSize, 4);
 
 	f.seekg(-16, ios::cur);
 	f.read(szBuffer, 4);
-	f.seekg(*(int*)szBuffer - 4, ios::cur);
+	f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
 
-	sNTROInfo.size = uStructSize + uEnumSize;
-	sNTROInfo.name = new char *[sNTROInfo.size];
-	sNTROInfo.data = new char *[sNTROInfo.size];
-
-	for (i = 0; i < uStructSize; i++)
+	NTROInfo = KeyValues(nStructSize + nEnumSize);
+	for (i = 0; i < nStructSize; i++)
 	{
-		uint16_t uDiskSize;
-		uint16_t uDiskOffset = 0;
-		uint32_t uResourceID;
-		uint32_t uBaseStructID;
+		uint16_t nDiskSize;
+		uint16_t nDiskOffset = 0;
+		uint32_t nResourceID;
+		uint32_t nBaseStructID;
 
 		f.seekg(4, ios::cur);
-		f.read((char*)&uResourceID, 4);
+		f.read((char*)&nResourceID, 4);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; j++);
 		f.seekg(-(j + 1), ios::cur);
-		sNTROInfo.name[i] = new char[j + 5];
-		f.read(sNTROInfo.name[i], j);
-		sNTROInfo.name[i][j] = '\0';
-		memcpy(&sNTROInfo.name[i][j + 1], &uResourceID, 4);
+		NTROInfo.name[i] = new char[j + 9];
+		f.read(NTROInfo.name[i], j);
+		NTROInfo.name[i][j] = '\0';
+		memcpy(&NTROInfo.name[i][j + 1], &nResourceID, 4);
 		f.seekg(p2 + 8);
-		f.read((char*)&uDiskSize, 2);
+		f.read((char *)&nDiskSize, 2);
 		f.seekg(2, ios::cur);
-		f.read((char*)&uBaseStructID, 4);
+		f.read((char *)&nBaseStructID, 4);
+		memcpy(&NTROInfo.name[i][j + 5], &nBaseStructID, 4);
 		f.seekg(4, ios::cur);
 		f.read(szBuffer, 4);
 
-		KeyValues* sResourceDiskStruct = new KeyValues;
-		sNTROInfo.data[i] = (char *)sResourceDiskStruct;
+		KeyValues * pResourceDiskStruct = new KeyValues(*(uint32_t *)szBuffer);
 
-		sResourceDiskStruct->size = *(int*)szBuffer;
-		sResourceDiskStruct->name = new char*[sResourceDiskStruct->size+1];
-		sResourceDiskStruct->data = new char*[sResourceDiskStruct->size+1];
-
-		//Stick the base struct onto the end as "hidden" data
-		sResourceDiskStruct->name[sResourceDiskStruct->size] = new char[16];
-		memcpy(sResourceDiskStruct->name[sResourceDiskStruct->size], "m_nBaseStructId", 15);
-		sResourceDiskStruct->name[sResourceDiskStruct->size][15] = '\0';
-		sResourceDiskStruct->data[sResourceDiskStruct->size] = (char*)uBaseStructID;
+		NTROInfo.data[i] = (char *)pResourceDiskStruct;
+		NTROInfo.type[i] = KV_TYPE_CHILD_KEYVALUE;
 
 		p2 = f.tellg();
 		f.seekg(-8, ios::cur);
 		f.read(szBuffer, 4);
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
 
-		for (j = 0; j < sResourceDiskStruct->size; j++)
+		//ResourceDiskStruct data:
+		//  2 bytes: disk offset
+		//  2 bytes: size of the struct
+		//  2 bytes: struct type
+		//  4 bytes: struct ID
+		//  4 bytes: indirection level
+		//  (up to) 10 bytes: indirection bytes (3 = pointer, 4 = array)
+		for (j = 0; j < pResourceDiskStruct->size; j++)
 		{
-			f.read(szBuffer, 4);
-			p3 = f.tellg();
-			f.seekg(*(int*)szBuffer - 4, ios::cur);
-			for (k = 0; f.get() != '\0'; k++);
-			f.seekg(-(k + 1), ios::cur);
-			sResourceDiskStruct->name[j] = new char[k + 1];
-			f.read(sResourceDiskStruct->name[j], k);
-			sResourceDiskStruct->name[j][k] = '\0';
-
-			//ResourceDiskStruct data:
-			//  2 bytes: disk offset
-			//  2 bytes: size of the struct
-			//  2 bytes: struct type
-			//  4 bytes: resource type
-			//  4 bytes: indirection level
-			f.seekg(p3 + 2);
+			ReadOffsetString(f, pResourceDiskStruct->name[j]);
+			f.seekg(2, ios::cur);
 			f.read(szBuffer, 2);
-			sResourceDiskStruct->data[j] = new char[14];
-			*(uint16_t*)&sResourceDiskStruct->data[j][0] = *(uint16_t*)szBuffer;
+			pResourceDiskStruct->data[j] = new char[24];
+			*(uint16_t*)&pResourceDiskStruct->data[j][0] = *(uint16_t*)szBuffer;
 			if (j != 0)
-				*(uint16_t*)&sResourceDiskStruct->data[j - 1][2] = *(uint16_t*)szBuffer - uDiskOffset;
-			uDiskOffset = *(uint16_t*)szBuffer;
+				*(uint16_t *)&pResourceDiskStruct->data[j - 1][2] = *(uint16_t *)szBuffer - nDiskOffset;
+			nDiskOffset = *(uint16_t *)szBuffer;
 			f.seekg(4, ios::cur);
 			f.read(szBuffer, 4);
-			*(uint32_t*)&sResourceDiskStruct->data[j][10] = *(uint32_t*)szBuffer;
+			*(uint32_t *)&pResourceDiskStruct->data[j][10] = *(uint32_t *)szBuffer;
+			f.seekg(-8, ios::cur);
 			f.read(szBuffer, 4);
-			*(uint32_t*)&sResourceDiskStruct->data[j][6] = *(uint32_t*)szBuffer;
+			p3 = f.tellg();
+			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+			memset(&pResourceDiskStruct->data[j][14], 0, 6);
+			for (k = 0; k < 10 && k < *(uint32_t *)&pResourceDiskStruct->data[j][10]; k++)
+				pResourceDiskStruct->data[j][14 + k] = (uint8_t)f.get();
+			f.seekg(p3 + 4);
 			f.read(szBuffer, 4);
-			*(uint16_t*)&sResourceDiskStruct->data[j][4] = *(uint16_t*)szBuffer;
+			*(uint32_t *)&pResourceDiskStruct->data[j][6] = *(uint32_t *)szBuffer;
+			f.read(szBuffer, 4);
+			*(uint16_t *)&pResourceDiskStruct->data[j][4] = *(uint16_t *)szBuffer;
+			//*(uint32_t *)&pResourceDiskStruct->data[j][20] = nBaseStructID;
 		}
 
 		if (j != 0)
-			*(uint16_t*)&sResourceDiskStruct->data[j - 1][2] = uDiskSize - uDiskOffset;
+			*(uint16_t *)&pResourceDiskStruct->data[j - 1][2] = nDiskSize - nDiskOffset;
 
 		f.seekg(p2 + 4);
 	}
 
 	f.seekg(p4);
 	f.read(szBuffer, 4);
-	f.seekg(*(int*)szBuffer - 4, ios::cur);
-	for (i = uStructSize; i < uStructSize + uEnumSize; i++)
+	f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+	for (i = nStructSize; i < nStructSize + nEnumSize; i++)
 	{
-		uint32_t uResourceID;
+		uint32_t nResourceID;
 
 		f.seekg(4, ios::cur);
-		f.read((char*)&uResourceID, 4);
+		f.read((char*)&nResourceID, 4);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; j++);
 		f.seekg(-(j + 1), ios::cur);
-		sNTROInfo.name[i] = new char[j + 5];
-		f.read(sNTROInfo.name[i], j);
-		sNTROInfo.name[i][j] = '\0';
-		memcpy(&sNTROInfo.name[i][j + 1], &uResourceID, 4);
+		NTROInfo.name[i] = new char[j + 5];
+		f.read(NTROInfo.name[i], j);
+		NTROInfo.name[i][j] = '\0';
+		memcpy(&NTROInfo.name[i][j + 1], &nResourceID, 4);
 		f.seekg(p2 + 12);
 		f.read(szBuffer, 4);
 
-		KeyValues* sResourceDiskEnum = new KeyValues;
-		sNTROInfo.data[i] = (char *)sResourceDiskEnum;
+		KeyValues * pResourceDiskEnum = new KeyValues(*(uint32_t *)szBuffer + 1);
+		pResourceDiskEnum->size--;
 
-		sResourceDiskEnum->size = *(int*)szBuffer;
-		sResourceDiskEnum->name = new char*[sResourceDiskEnum->size+1];
-		sResourceDiskEnum->data = new char*[sResourceDiskEnum->size+1];
+		NTROInfo.data[i] = (char *)pResourceDiskEnum;
+		NTROInfo.type[i] = KV_TYPE_CHILD_KEYVALUE;
 
 		f.seekg(-8, ios::cur);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
-		f.seekg(*(int*)szBuffer - 4, ios::cur);
-		for (j = 0; j < sResourceDiskEnum->size; j++)
+		f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+		for (j = 0; j < pResourceDiskEnum->size; j++)
 		{
-			uint32_t uEnumValue;
-			ReadOffsetString(f, sResourceDiskEnum->name[j]);
-			f.read((char*)&uEnumValue, 4);
-			sResourceDiskEnum->data[j] = (char*)uEnumValue;
+			ReadOffsetString(f, pResourceDiskEnum->name[j]);
+			pResourceDiskEnum->data[j] = new char[4];
+			f.read(pResourceDiskEnum->data[j], 4);
 		}
 		f.seekg(p2 + 4);
 	}
 
 	f.seekg(p1 + 4);
 
-	psLastNTROInfo = &sNTROInfo;
+	pLastNTROInfo = &NTROInfo;
 }
 
-void ReadStructuredData(std::fstream& f, KeyValues& sDestination, KeyValues * psSourceStruct)
+void ClearLastNTROEntry()
+{
+	pLastNTROInfo = NULL;
+}
+
+KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectionLevel, uint8_t * pIndirectionBytes)
 {
 	char szBuffer[4];
 
-	int32_t i, j, k;
-	uint32_t uIndex = 0;
-	uint32_t uTotalOffset = 0;
-
-	std::streamoff p1, p2;
-
-	if (psLastNTROInfo == NULL)
-		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
-
-	if (psSourceStruct == NULL)
+	if (nIndirectionLevel > 0)
 	{
-		f.read(szBuffer, 4);
-		psSourceStruct = GetNTROResourceDataByID(*(uint32_t*)szBuffer);
-		if (psSourceStruct == NULL)
-			throw std::string("No matching NTRO structure was found for the header.");
-		uTotalOffset += 4;
+		if (pIndirectionBytes[0] == 0x03)
+		{
+			f.read(szBuffer, 4);
+			std::streamoff p = f.tellg();
+			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+			KeyValues * pSubStruct = new KeyValues(1);
+			f.read(szBuffer, 4);
+			const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
+			if (!szStructName)
+				szStructName = GetNTROResourceNameByID(nStructID);
+			pSubStruct->name[0] = new char[strlen(szStructName) + 1];
+			memcpy(pSubStruct->name[0], szStructName, strlen(szStructName));
+			pSubStruct->name[0][strlen(szStructName)] = '\0';
+			f.seekg(-4, ios::cur);
+			pSubStruct->data[0] = (char *)ReadStruct(f, nStructID, nIndirectionLevel - 1, &pIndirectionBytes[1]);
+			pSubStruct->type[0] = KV_TYPE_CHILD_KEYVALUE;
+			f.seekg(p);
+			return pSubStruct;
+		}
+		else if (pIndirectionBytes[0] == 0x04)
+		{
+			f.seekg(4, ios::cur);
+			f.read(szBuffer, 4);
+			int x = f.tellg();
+			KeyValues * pSubStruct = new KeyValues(*(uint32_t *)szBuffer);
+			f.seekg(-8, ios::cur);
+			f.read(szBuffer, 4);
+			std::streamoff p = f.tellg();
+			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+			for (uint32_t i = 0; i < pSubStruct->size; i++)
+			{
+				std::streamoff p2 = f.tellg();
+				f.read(szBuffer, 4);
+				const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
+				if (!szStructName)
+					szStructName = GetNTROResourceNameByID(nStructID);
+				pSubStruct->name[i] = new char[strlen(szStructName) + 1];
+				memcpy(pSubStruct->name[i], szStructName, strlen(szStructName));
+				pSubStruct->name[i][strlen(szStructName)] = '\0';
+				f.seekg(-4, ios::cur);
+				pSubStruct->data[i] = (char *)ReadStruct(f, nStructID, nIndirectionLevel - 1, &pIndirectionBytes[1]);
+				pSubStruct->type[i] = KV_TYPE_CHILD_KEYVALUE;
+			}
+			f.seekg(p);
+			return pSubStruct;
+		}
+		else
+		{
+			throw std::string("Unknown indirection value \"" + std::to_string(pIndirectionBytes[0]) + "\".");
+		}
 	}
+	else
+	{
+		KeyValues * pSubStruct = new KeyValues;
+		KeyValues * pResourceStruct = GetNTROResourceDataByID(nStructID);
+		ReadStructuredData(f, *pSubStruct, pResourceStruct);
+		return pSubStruct;
+	}
+}
+
+void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct)
+{
+	char szBuffer[4];
+
+	uint32_t nIndex = 0;
+	uint32_t nTotalOffset = 0;
+
+	if (!pLastNTROInfo)
+		throw std::string("No NTRO information could be found. (Did you forget to process the NTRO block first?)");
+
+	int x = f.tellg();
+	f.read(szBuffer, 4);
+	KeyValues * pHeaderResource = GetNTROResourceDataByID(*(uint32_t *)szBuffer);
+	if (!pHeaderResource)
+		f.seekg(-4, ios::cur);
+	else
+	{
+		pSourceStruct = pHeaderResource;
+		nTotalOffset += 4;
+	}
+
+	if (!pSourceStruct)
+		throw std::string("No matching NTRO structure could be found.");
 
 	//KeyValues aren't dynamically sized, so we need to know how much to allocate ahead of time
 	//This includes the struct and all base structs that it encompasses
-	uint32_t uTotalStructSize = 0;
-	std::stack<KeyValues*> sStructStack;
-	sStructStack.push(psSourceStruct);
-	while (sStructStack.top() != NULL)
+	uint32_t nTotalStructSize = 0;
+	uint32_t nLastBaseStructID = *(uint32_t *)szBuffer;
+	std::stack<KeyValues *> pStructStack;
+	pStructStack.push(pSourceStruct);
+	while ((pStructStack.top()) && (nLastBaseStructID != 0))
 	{
-		uTotalStructSize += sStructStack.top()->size;
-		sStructStack.push(GetNTROResourceDataByID((uint32_t)sStructStack.top()->data[sStructStack.top()->size]));
+		nTotalStructSize += pStructStack.top()->size;
+		uint32_t nBaseStructID = GetNTROBaseStructByID(nLastBaseStructID);
+		pStructStack.push(GetNTROResourceDataByID(nBaseStructID));
+		nLastBaseStructID = nBaseStructID;
 	}
-	sStructStack.pop();    //Get rid of the terminating null value
+	pStructStack.pop();    //Get rid of the terminating null value
 
-	sDestination.size = uTotalStructSize;
-	sDestination.name = new char*[uTotalStructSize];
-	sDestination.data = new char*[uTotalStructSize];
-	memset(sDestination.name, 0, uTotalStructSize);
+	Destination = KeyValues(nTotalStructSize);
 
-	while (!sStructStack.empty())
+	while (!pStructStack.empty())
 	{
-		psSourceStruct = sStructStack.top();
-		for (i = 0; i < psSourceStruct->size; i++)
+		pSourceStruct = pStructStack.top();
+		for (uint32_t i = 0; i < pSourceStruct->size; i++)
 		{
-			uint32_t uNameLength = strlen(psSourceStruct->name[i]);
-			uint16_t uDiskOffset = *(uint16_t*)&psSourceStruct->data[i][0];
-			uint16_t uDataSize = *(uint16_t*)&psSourceStruct->data[i][2];
-			uint16_t uDataType = *(uint16_t*)&psSourceStruct->data[i][4];
-			uint32_t uStructID = *(uint32_t*)&psSourceStruct->data[i][6];
-			uint32_t uIndirectionLevel = *(uint32_t*)&psSourceStruct->data[i][10];
+			uint32_t nNameLength = strlen(pSourceStruct->name[i]);
+			uint16_t nDiskOffset = *(uint16_t *)&pSourceStruct->data[i][0];
+			uint16_t nDataSize = *(uint16_t *)&pSourceStruct->data[i][2];
+			uint16_t nDataType = *(uint16_t *)&pSourceStruct->data[i][4];
+			uint32_t nStructID = *(uint32_t *)&pSourceStruct->data[i][6];
+			uint32_t nIndirectionLevel = *(uint32_t *)&pSourceStruct->data[i][10];
+			uint8_t* pIndirectionBytes = (uint8_t *)&pSourceStruct->data[i][14];
 
-			sDestination.name[uIndex] = new char[uNameLength + 3];
-			memcpy(sDestination.name[uIndex], psSourceStruct->name[i], uNameLength);
-			sDestination.name[uIndex][uNameLength] = '\0';
-			memcpy(&sDestination.name[uIndex][uNameLength+1], &uDataType, 2);
+			Destination.name[nIndex] = new char[nNameLength + 3];
+			memcpy(Destination.name[nIndex], pSourceStruct->name[i], nNameLength);
+			Destination.name[nIndex][nNameLength] = '\0';
+			memcpy(&Destination.name[nIndex][nNameLength+1], &nDataType, 2);
 
-			if (uTotalOffset != uDiskOffset)
-				f.seekg((int32_t)uDiskOffset - (int32_t)uTotalOffset, ios::cur);
-
-			if ((uDataType == NTRO_DATA_TYPE_STRING) || (uDataType == NTRO_DATA_TYPE_NAME))
+			if (nTotalOffset != nDiskOffset)
 			{
-				p1 = f.tellg();
-				ReadOffsetString(f, sDestination.data[uIndex]);
-				f.seekg(p1 + uDataSize);
+				f.seekg((int32_t)nDiskOffset - (int32_t)nTotalOffset, ios::cur);
+				nTotalOffset = nDiskOffset;
 			}
-			else if (uDataType == NTRO_DATA_TYPE_STRUCT)
+
+			if ((nDataType == NTRO_DATA_TYPE_STRING) || (nDataType == NTRO_DATA_TYPE_NAME))
 			{
-				KeyValues* sParticleInfoStruct = new KeyValues;
-
-				p1 = f.tellg();
-				sDestination.data[uIndex] = (char*)sParticleInfoStruct;
-				f.seekg(4, ios::cur);
-				f.read((char*)&sParticleInfoStruct->size, 4);
-
-				if ((sParticleInfoStruct->size != 0) || (uIndirectionLevel == 0))
-				{
-					sParticleInfoStruct->name = new char*[sParticleInfoStruct->size];
-					sParticleInfoStruct->data = new char*[sParticleInfoStruct->size];
-
-					memset(sParticleInfoStruct->name, 0, sizeof(char*) * sParticleInfoStruct->size);
-					memset(sParticleInfoStruct->data, 0, sizeof(char*) * sParticleInfoStruct->size);
-
-					f.seekg(-8, ios::cur);
-					f.read(szBuffer, 4);
-					f.seekg(*(int*)szBuffer - 4, ios::cur);
-
-					if (uIndirectionLevel > 1)
-					{
-						for (j = 0; j < sParticleInfoStruct->size; j++)
-						{
-							p2 = f.tellg();
-							//Unconfirmed for indirection level > 2...
-							//Then again, what kind of idiot stores a pointer to a pointer to a pointer anyways?
-							for (k = 1; k < uIndirectionLevel; k++)
-							{
-								f.read(szBuffer, 4);
-								f.seekg(*(int*)szBuffer - 4, ios::cur);
-							}
-
-							f.read(szBuffer, 4);
-							const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
-							if (szStructName != NULL)
-							{
-								uint32_t uStructNameLength = strlen(szStructName);
-								sParticleInfoStruct->name[j] = new char[uStructNameLength + 1];
-								memcpy(sParticleInfoStruct->name[j], szStructName, uStructNameLength);
-								sParticleInfoStruct->name[j][uStructNameLength] = '\0';
-								sParticleInfoStruct->data[j] = (char*)new KeyValues[1];
-							}
-							else
-								throw std::string("No matching NTRO structure was found for the header.");
-							f.seekg(-4, ios::cur);
-
-							ReadStructuredData(f, *(KeyValues*)sParticleInfoStruct->data[j]);
-
-							f.seekg(p2 + 4);
-						}
-					}
-					else if (uIndirectionLevel == 1)
-					{
-						KeyValues* psResourceStruct = GetNTROResourceDataByID(uStructID);
-						const char* szResourceName = GetNTROResourceNameByID(uStructID);
-						if (psResourceStruct != NULL)
-						{
-							for (k = 0; k < sParticleInfoStruct->size; k++)
-							{
-								sParticleInfoStruct->name[k] = new char[strlen(szResourceName) + 1];
-								memcpy(sParticleInfoStruct->name[k], szResourceName, strlen(szResourceName) + 1);
-								sParticleInfoStruct->data[k] = (char*)new KeyValues;
-								ReadStructuredData(f, *(KeyValues*)sParticleInfoStruct->data[k], psResourceStruct);
-							}
-						}
-					}
-					else if (uIndirectionLevel == 0)
-					{
-						KeyValues* psResourceStruct = GetNTROResourceDataByID(uStructID);
-						const char* szResourceName = GetNTROResourceNameByID(uStructID);
-						if (psResourceStruct != NULL)
-						{
-							sParticleInfoStruct->size = psResourceStruct->size;
-							sParticleInfoStruct->name = new char*[sParticleInfoStruct->size];
-							sParticleInfoStruct->data = new char*[sParticleInfoStruct->size];
-
-							for (j = 0; j < psResourceStruct->size; j++)
-							{
-								uint32_t uStructNameLength = strlen(psResourceStruct->name[j]);
-								uint16_t uStructFieldSize = *(uint16_t*)&psResourceStruct->data[j][2];
-
-								sParticleInfoStruct->name[j] = new char[uStructNameLength + 1];
-								memcpy(sParticleInfoStruct->name[j], psResourceStruct->name[j], uStructNameLength);
-								sParticleInfoStruct->name[j][uStructNameLength] = '\0';
-								sParticleInfoStruct->data[j] = new char[uStructFieldSize];
-								f.read(sParticleInfoStruct->data[j], uStructFieldSize);
-							}
-						}
-
-						p1 = f.tellg() - (std::streampos)uDataSize;
-					}
-				}
-				f.seekg(p1 + uDataSize);
+				std::streamoff p = f.tellg();
+				ReadOffsetString(f, Destination.data[nIndex]);
+				f.seekg(p + nDataSize);
 			}
-			else if (uDataType == NTRO_DATA_TYPE_HANDLE)
+			else if (nDataType == NTRO_DATA_TYPE_STRUCT)
+			{
+				std::streamoff p = f.tellg();
+				Destination.data[nIndex] = (char *)ReadStruct(f, nStructID, nIndirectionLevel, pIndirectionBytes);
+				Destination.type[nIndex] = KV_TYPE_CHILD_KEYVALUE;
+				f.seekg(p + nDataSize);
+			}
+			else if (nDataType == NTRO_DATA_TYPE_HANDLE)
 			{
 				char szBuffer2[8];
 
-				f.read(szBuffer2, uDataSize);
+				f.read(szBuffer2, 8);
 				const char * szResourceName = GetExternalResourceName(szBuffer2);
-				if (szResourceName != NULL)
+				if (szResourceName)
 				{
-					uint32_t uResourceNameLength = strlen(szResourceName);
-					sDestination.data[uIndex] = new char[uResourceNameLength + 1];
-					memcpy(sDestination.data[uIndex], szResourceName, uResourceNameLength);
-					sDestination.data[uIndex][uResourceNameLength] = '\0';
+					uint32_t nNameLength = strlen(szResourceName);
+					Destination.data[nIndex] = new char[nNameLength + 1];
+					memcpy(Destination.data[nIndex], szResourceName, nNameLength);
+					Destination.data[nIndex][nNameLength] = '\0';
 				}
 				else
 				{
-					sDestination.data[uIndex] = new char[1];
-					sDestination.data[uIndex][0] = '\0';
+					Destination.data[nIndex] = new char[1];
+					Destination.data[nIndex][0] = '\0';
 				}
 			}
 			else
 			{
-				sDestination.data[uIndex] = new char[uDataSize];
-				f.read(sDestination.data[uIndex], uDataSize);
+				Destination.data[nIndex] = new char[nDataSize];
+				f.read(Destination.data[nIndex], nDataSize);
 			}
-
-			uIndex++;
-			uTotalOffset += uDataSize;
+			
+			nIndex++;
+			nTotalOffset += nDataSize;
 		}
-		sStructStack.pop();
+		pStructStack.pop();
 	}
 }
