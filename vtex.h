@@ -91,12 +91,12 @@ enum ImageChannel
 };
 
 void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, bool bGenerateMipmaps);
-void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, uint8_t uImageFormat, bool bGenerateMipmaps);
+void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, uint8_t nImageFormat, bool bGenerateMipmaps);
 void ExtractFrameImage(const std::string& szImageName, const std::string& szFilenameOut, float * szCoords);
 void ExtractSheetData(std::fstream& in, const std::string& szImageName, const std::string& szFilenameOut);
 void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameOut);
-void ExtractImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel uImageChannel);
-void FillImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel uImageChannel, uint8_t uValue);
-void SwapImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel uImageChannel1, ImageChannel uImageChannel2);
+void ExtractImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel);
+void FillImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel, uint8_t nValue);
+void SwapImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel1, ImageChannel nImageChannel2);
 
 #endif

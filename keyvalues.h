@@ -26,11 +26,10 @@ enum KeyValueType
 
 struct KeyValues
 {
-	KeyValues() : size(0), name(0), data(0), type(0) { id = guid_counter++;  };
+	KeyValues() : size(0), name(0), data(0), type(0) { };
 	KeyValues(uint32_t nSize)
 	{
 		size = nSize;
-		id = guid_counter++;
 		name = new char *[nSize];
 		memset(name, 0, sizeof(char *) * nSize);
 		data = new char *[nSize];
@@ -104,9 +103,6 @@ struct KeyValues
 		}
 		return NULL;
 	}
-
-	uint32_t id;
-	static uint32_t guid_counter;
 
 	uint32_t size;
 	uint8_t * type;

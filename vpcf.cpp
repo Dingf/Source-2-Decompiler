@@ -71,7 +71,7 @@ void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const
 			{
 				KeyValues * pOperators = (KeyValues*)DataBlock.data[i];
 				out << "\tCParticleOperator*[] " << DataBlock.name[i] << " =\n\t[\n";
-				for (int32_t j = 0; j < pOperators->size; j++)
+				for (uint32_t j = 0; j < pOperators->size; j++)
 				{
 					KeyValues * pOperator = (KeyValues *)pOperators->data[j];
 					out << "\t\t&" << pOperator->name[0] << "_" << j << ((j < pOperators->size - 1) ? ",\n" : "\n");

@@ -17,7 +17,7 @@
 
 const char * GetExternalResourceName(const char * szRefID);
 
-void ProcessRERLBlock(std::fstream& f, KeyValues& CRERLInfo);
+void ProcessRERLBlock(std::fstream& f, KeyValues& RERLInfo);
 void ClearLastRERLEntry();
 
 #endif

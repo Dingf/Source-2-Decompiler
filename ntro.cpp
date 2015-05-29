@@ -12,56 +12,57 @@ using std::ios;
 
 KeyValues * pLastNTROInfo = NULL;
 
-KeyValues * GetNTROResourceDataByID(uint32_t uID)
+uint32_t SearchNTROInfo(uint32_t nID, uint32_t (*pFunction)(char *, char *))
 {
 	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
 	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
 	{
-		if (uID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
+		if ((nID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1]) || (nID == (uint32_t)pLastNTROInfo->data[i]))
 		{
-			return (KeyValues *)pLastNTROInfo->data[i];
-		}
-	}
-	return NULL;
-}
-
-const char* GetNTROResourceNameByID(uint32_t uID)
-{
-	if (!pLastNTROInfo)
-		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
-
-	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
-	{
-		if (uID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
-		{
-			return pLastNTROInfo->name[i];
-		}
-	}
-	return NULL;
-}
-
-uint32_t GetNTROBaseStructByID(uint32_t nID)
-{
-	if (!pLastNTROInfo)
-		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
-
-	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
-	{
-		if (nID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1])
-		{
-			return *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 5];
+			return pFunction(pLastNTROInfo->name[i], pLastNTROInfo->data[i]);
 		}
 	}
 	return 0;
 }
 
+uint32_t GetData(char * szName, char * szData)
+{
+	return (uint32_t)szData;
+}
+
+uint32_t GetName(char * szName, char * szData)
+{
+	return (uint32_t)szName;
+}
+
+uint32_t GetBaseStructID(char * szName, char * szData)
+{
+	return *(uint32_t*)&szName[strlen(szName) + 5];
+}
+
+KeyValues * FindNTROResourceData(uint32_t nID)
+{
+	return (KeyValues *)SearchNTROInfo(nID, GetData);
+}
+
+const char * FindNTROResourceName(uint32_t nID)
+{
+	return (const char *)SearchNTROInfo(nID, GetName);
+}
+
+uint32_t FindNTROBaseStructID(uint32_t nID)
+{
+	return SearchNTROInfo(nID, GetBaseStructID);
+}
+
+
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 {
 	char szBuffer[4];
 
-	int32_t i, j, k;
+	uint32_t i, j, k;
 	uint32_t nStructSize, nEnumSize;
 
 	std::streamoff p1, p2, p3, p4;
@@ -92,7 +93,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; j++);
-		f.seekg(-(j + 1), ios::cur);
+		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 9];
 		f.read(NTROInfo.name[i], j);
 		NTROInfo.name[i][j] = '\0';
@@ -169,7 +170,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; j++);
-		f.seekg(-(j + 1), ios::cur);
+		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 5];
 		f.read(NTROInfo.name[i], j);
 		NTROInfo.name[i][j] = '\0';
@@ -219,9 +220,9 @@ KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectio
 			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
 			KeyValues * pSubStruct = new KeyValues(1);
 			f.read(szBuffer, 4);
-			const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
+			const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
 			if (!szStructName)
-				szStructName = GetNTROResourceNameByID(nStructID);
+				szStructName = FindNTROResourceName(nStructID);
 			pSubStruct->name[0] = new char[strlen(szStructName) + 1];
 			memcpy(pSubStruct->name[0], szStructName, strlen(szStructName));
 			pSubStruct->name[0][strlen(szStructName)] = '\0';
@@ -235,7 +236,6 @@ KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectio
 		{
 			f.seekg(4, ios::cur);
 			f.read(szBuffer, 4);
-			int x = f.tellg();
 			KeyValues * pSubStruct = new KeyValues(*(uint32_t *)szBuffer);
 			f.seekg(-8, ios::cur);
 			f.read(szBuffer, 4);
@@ -243,11 +243,10 @@ KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectio
 			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
 			for (uint32_t i = 0; i < pSubStruct->size; i++)
 			{
-				std::streamoff p2 = f.tellg();
 				f.read(szBuffer, 4);
-				const char * szStructName = GetNTROResourceNameByID(*(uint32_t*)szBuffer);
+				const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
 				if (!szStructName)
-					szStructName = GetNTROResourceNameByID(nStructID);
+					szStructName = FindNTROResourceName(nStructID);
 				pSubStruct->name[i] = new char[strlen(szStructName) + 1];
 				memcpy(pSubStruct->name[i], szStructName, strlen(szStructName));
 				pSubStruct->name[i][strlen(szStructName)] = '\0';
@@ -266,7 +265,7 @@ KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectio
 	else
 	{
 		KeyValues * pSubStruct = new KeyValues;
-		KeyValues * pResourceStruct = GetNTROResourceDataByID(nStructID);
+		KeyValues * pResourceStruct = FindNTROResourceData(nStructID);
 		ReadStructuredData(f, *pSubStruct, pResourceStruct);
 		return pSubStruct;
 	}
@@ -282,9 +281,8 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 	if (!pLastNTROInfo)
 		throw std::string("No NTRO information could be found. (Did you forget to process the NTRO block first?)");
 
-	int x = f.tellg();
 	f.read(szBuffer, 4);
-	KeyValues * pHeaderResource = GetNTROResourceDataByID(*(uint32_t *)szBuffer);
+	KeyValues * pHeaderResource = FindNTROResourceData(*(uint32_t *)szBuffer);
 	if (!pHeaderResource)
 		f.seekg(-4, ios::cur);
 	else
@@ -299,15 +297,12 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 	//KeyValues aren't dynamically sized, so we need to know how much to allocate ahead of time
 	//This includes the struct and all base structs that it encompasses
 	uint32_t nTotalStructSize = 0;
-	uint32_t nLastBaseStructID = *(uint32_t *)szBuffer;
 	std::stack<KeyValues *> pStructStack;
 	pStructStack.push(pSourceStruct);
-	while ((pStructStack.top()) && (nLastBaseStructID != 0))
+	while (pStructStack.top())
 	{
 		nTotalStructSize += pStructStack.top()->size;
-		uint32_t nBaseStructID = GetNTROBaseStructByID(nLastBaseStructID);
-		pStructStack.push(GetNTROResourceDataByID(nBaseStructID));
-		nLastBaseStructID = nBaseStructID;
+		pStructStack.push(FindNTROResourceData(FindNTROBaseStructID((uint32_t)pStructStack.top())));
 	}
 	pStructStack.pop();    //Get rid of the terminating null value
 

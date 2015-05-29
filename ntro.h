@@ -48,10 +48,6 @@ enum IntrospectionDataType
 	NTRO_DATA_TYPE_NAME = 31,    //Also used for notes as well? idk... seems to be some kind of special string
 };
 
-KeyValues* GetNTROResourceDataByID(uint32_t nID);
-const char* GetNTROResourceNameByID(uint32_t nID);
-uint32_t GetNTROBaseStructByID(uint32_t nID);
-
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo);
 void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct = NULL);
 void ClearLastNTROEntry();

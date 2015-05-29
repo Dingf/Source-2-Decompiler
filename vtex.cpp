@@ -61,12 +61,12 @@ void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16
 			for (uint32_t k = 0; k < nHeight / pow(2.0f, j - 1); k++)
 			{
 				memset(szBuffer, 0, nWidth * 4);
-				in.read(szBuffer, (4 * nWidth) / pow(2.0f, j - 1));
+				in.read(szBuffer, std::streamsize((4 * nWidth) / pow(2.0f, j - 1)));
 				if ((!bGenerateMipmaps) && (j != 1))
 					continue;
 
 				char c;	
-				for (uint32_t l = 0; l < nWidth * 4; l += 4)
+				for (uint32_t l = 0; l < (uint32_t)nWidth * 4; l += 4)
 				{
 					c = szBuffer[l];
 					szBuffer[l] = szBuffer[l + 2];
@@ -266,8 +266,8 @@ void ExtractFrameImage(const std::string& szImageName, const std::string& szFile
 	in.seekg(1, ios::cur);
 	if (nMipLevels > 1)
 	{
-		in.seekg(nHeight * nWidth * (1.0f - pow(0.5f, (float)(nMipLevels - 1))) * 4, ios::cur);
-		in.seekg(nWidth * 4 * (nMipLevels - 1), ios::cur);
+		in.seekg(std::streamsize(nHeight * nWidth * (1.0f - pow(0.5f, (float)(nMipLevels - 1))) * 4), ios::cur);
+		in.seekg(std::streamsize(nWidth * 4 * (nMipLevels - 1)), ios::cur);
 	}
 
 	uint32_t nFrameWidth = (uint32_t)ceil(fCoords[2] * nWidth) - (uint32_t)floor(fCoords[0] * nWidth);
@@ -416,7 +416,7 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 }
 
 
-void ManipulateImageChannel(const std::string& szImageName, const std::string& szFilenameOut, void(*pFunction)(char **, uint8_t, uint8_t), uint8_t nImageChannel1, uint8_t nImageChannel2)
+void ManipulateImageChannel(const std::string& szImageName, const std::string& szFilenameOut, void (*pFunction)(char **, uint8_t, uint8_t), uint8_t nImageChannel1, uint8_t nImageChannel2)
 {
 	char * szBuffer;
 	char szHeader[22];
@@ -500,6 +500,8 @@ void SwapImageChannel(const std::string& szImageName, const std::string& szFilen
 		throw std::string("Invalid image channel specified.");
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelSwap, nImageChannel1, nImageChannel2);
 }
+
+#include <iostream>
 
 void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
