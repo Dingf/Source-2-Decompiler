@@ -16,7 +16,7 @@
 	 4 bytes:   Unknown (mip 0 size?)
 	 2 bytes:   Multisample Type
 	 2 bytes:   Flags
-	 16 bytes:  Reflectivity (float x4)
+	 16 bytes:  Reflectivity (vector4)
 	 4 bytes:   Offset to sheet data
 	   -> 4 bytes:  Offset to sequence info
 	     --> 4 bytes:  Sequence ID
@@ -26,13 +26,13 @@
          --> 4 bytes:  Offset to frame data
 		   ---> 4 bytes:  Display time
 		   ---> 4 bytes:  Offset to image data
-		     ----> 8 bytes:  Cropped min (float x2)
-			 ----> 8 bytes:  Cropped max (float x2)
+		     ----> 8 bytes:  Cropped min (vector2)
+			 ----> 8 bytes:  Cropped max (vector2)
 		   ---> 4 bytes:  Number of images
-		   ---> 8 bytes:  Cropped min (float x2)
-		   ---> 8 bytes:  Cropped max (float x2)
-		   ---> 8 bytes:  Uncropped min (float x2)
-		   ---> 8 bytes:  Uncropped max (float x2)
+		   ---> 8 bytes:  Cropped min (vector2)
+		   ---> 8 bytes:  Cropped max (vector2)
+		   ---> 8 bytes:  Uncropped min (vector2)
+		   ---> 8 bytes:  Uncropped max (vector2)
 		 --> 4 bytes:  Number of frames
 		 --> 4 bytes:  Total time (float)
 		 --> 4 bytes:  Offset to name
@@ -90,11 +90,6 @@ enum ImageChannel
 	SIZEOF_IMAGE_CHANNEL
 };
 
-void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, bool bGenerateMipmaps);
-void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint8_t nMipLevels, uint8_t nImageFormat, bool bGenerateMipmaps);
-void ExtractFrameImage(const std::string& szImageName, const std::string& szFilenameOut, float * szCoords);
-void ExtractSheetData(std::fstream& in, const std::string& szImageName, const std::string& szFilenameOut);
-void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameOut);
 void ExtractImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel);
 void FillImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel, uint8_t nValue);
 void SwapImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel1, ImageChannel nImageChannel2);

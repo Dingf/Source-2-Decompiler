@@ -1,6 +1,5 @@
 #include <string.h>
 #include <stdint.h>
-#include <map>
 #include <string>
 #include <fstream>
 #include "decompiler.h"

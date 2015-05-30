@@ -4,6 +4,8 @@
 
 using std::ios;
 
+uint32_t KeyValues::guid_counter = 0;
+
 //ReadOffsetString
 //  Reads in the next 4 bytes as an offset to a zero-terminated string value, then
 //  allocates and returns the string.

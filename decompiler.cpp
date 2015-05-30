@@ -42,7 +42,7 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 	}
 
 	_OutputMap[".vmat_c"] = &S2Decompiler::OutputVMAT;
-	//_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
+	_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
 	_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
 	//_OutputMap[".vsnd_c"] = &S2Decompiler::OutputVSND;
 	_OutputMap[".vtex_c"] = &S2Decompiler::OutputVTEX;
@@ -135,7 +135,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	bool bSilentDecompile = _nDecompilerFlags & DECOMPILER_FLAG_SILENT_DECOMPILE;
 
 	uint32_t nFileSize, nBlockCount;
-	KeyValues RERLBlock, NTROBlock, DATABlock, ExtraBlock;
+	KeyValues RERLBlock, NTROBlock, DATABlock;
 
 	std::string szFilename;
 	std::string szExtension = szPathname.substr(szPathname.find_last_of("."));
@@ -150,7 +150,6 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 		std::string szFileExt = szFilename.substr(szFilename.length() - 20, 5);
 		if ((szFileExt == "_tga_") || (szFileExt == "_psd_"))
 			szResourceName = szResourceName.substr(0, szResourceName.length() - 13);
-		std::string wtf = szResourceName.substr(szResourceName.length() - 5, 5);
 		if ((szResourceName.length() >= 5) && (szResourceName.substr(szResourceName.length() - 5, 5) == "_z000"))
 			szResourceName = szResourceName.substr(0, szResourceName.length() - 5);
 	}

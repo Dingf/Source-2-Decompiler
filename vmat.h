@@ -20,7 +20,7 @@
 	 4 bytes:  Number of float params
 	 4 bytes:  Offset to vector params
 	   -> 4 bytes:   Offset to param string
-	   -> 16 bytes:  Vector param value (4x floats)
+	   -> 16 bytes:  Vector param value (vector4)
 	 4 bytes:  Number of vector params
 	 4 bytes:  Offset to texture params
 	   -> 8 bytes:  Offset to param string

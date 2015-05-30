@@ -1,7 +1,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <math.h>
-#include <algorithm>
 #include <string>
 #include <fstream>
 #include "decompiler.h"
@@ -395,10 +394,10 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 	{
 		uint32_t nIndex = i * nWidth * 16;
 		uint32_t nOffset = i * nWidth * 4;
-		memcpy(&szBlockBuffer[nIndex], &szBuffer[(nWidth * nWidth * 4) + nOffset], nWidth * 4);
-		memcpy(&szBlockBuffer[nIndex + (nWidth * 4)], &szBuffer[(nWidth * nWidth * 8) + nOffset], nWidth * 4);
+		memcpy(&szBlockBuffer[nIndex], &szBuffer[nOffset + (nWidth * nWidth * 4) ], nWidth * 4);
+		memcpy(&szBlockBuffer[nIndex + (nWidth * 4)], &szBuffer[nOffset + (nWidth * nWidth * 8)], nWidth * 4);
 		memcpy(&szBlockBuffer[nIndex + (nWidth * 8)], &szBuffer[nOffset], nWidth * 4);
-		memcpy(&szBlockBuffer[nIndex + (nWidth * 12)], &szBuffer[(nWidth * nWidth * 12) + nOffset], nWidth * 4);
+		memcpy(&szBlockBuffer[nIndex + (nWidth * 12)], &szBuffer[nOffset + (nWidth * nWidth * 12)], nWidth * 4);
 	}
 	out.write(szBlockBuffer, nBlockBufferSize);
 
@@ -411,8 +410,8 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 	out.write(szBlockBuffer, nBlockBufferSize);
 	out.close();
 
-	delete[] szBuffer;
 	delete[] szBlockBuffer;
+	delete[] szBuffer;
 }
 
 
@@ -501,8 +500,6 @@ void SwapImageChannel(const std::string& szImageName, const std::string& szFilen
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelSwap, nImageChannel1, nImageChannel2);
 }
 
-#include <iostream>
-
 void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
 	uint16_t nWidth      = *(uint16_t *)DataBlock["m_nWidth"];
@@ -555,7 +552,8 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const
 		out << "\t\t\t\"m_name\"\t\"string\"\t\"0\"\n";
 
 		std::string szInputName = ((bHasSheetData) ? szSheetName : szImageName);
-		std::replace(szInputName.begin(), szInputName.end(), '\\', '/');
+		for (uint32_t i = 0; i < szInputName.size(); i++)
+			szInputName[i] = (szInputName[i] == '\\') ? '/' : szInputName[i];
 		if (szInputName.substr(0, 2) == "./")
 			szInputName = szInputName.substr(2);
 		if ((nDepth > 1) && (szInputName.substr(szInputName.length() - 4) == ".tga"))

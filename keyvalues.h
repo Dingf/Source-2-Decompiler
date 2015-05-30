@@ -26,9 +26,10 @@ enum KeyValueType
 
 struct KeyValues
 {
-	KeyValues() : size(0), name(0), data(0), type(0) { };
+	KeyValues() : size(0), name(0), data(0), type(0) { id = guid_counter++; };
 	KeyValues(uint32_t nSize)
 	{
+		id = guid_counter++;
 		size = nSize;
 		name = new char *[nSize];
 		memset(name, 0, sizeof(char *) * nSize);
@@ -40,15 +41,6 @@ struct KeyValues
 
 	~KeyValues()
 	{
-		if (name)
-		{
-			for (uint32_t i = 0; i < size; i++)
-			{
-				if (name[i])
-					delete[] name[i];
-			}
-			delete[] name;
-		}
 		if (data)
 		{
 			for (uint32_t i = 0; i < size; i++)
@@ -62,6 +54,15 @@ struct KeyValues
 				}
 			}
 			delete[] data;
+		}
+		if (name)
+		{
+			for (uint32_t i = 0; i < size; i++)
+			{
+				if (name[i])
+					delete[] name[i];
+			}
+			delete[] name;
 		}
 		if (type)
 			delete[] type;
@@ -103,6 +104,9 @@ struct KeyValues
 		}
 		return NULL;
 	}
+
+	int32_t id;
+	static uint32_t guid_counter;
 
 	uint32_t size;
 	uint8_t * type;
