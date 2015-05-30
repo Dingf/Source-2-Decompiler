@@ -6,8 +6,6 @@
 #include "ntro.h"
 #include "rerl.h"
 
-#include <iostream>
-
 using std::ios;
 
 KeyValues * pLastNTROInfo = NULL;
@@ -151,7 +149,6 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 			*(uint32_t *)&pResourceDiskStruct->data[j][6] = *(uint32_t *)szBuffer;
 			f.read(szBuffer, 4);
 			*(uint16_t *)&pResourceDiskStruct->data[j][4] = *(uint16_t *)szBuffer;
-			//*(uint32_t *)&pResourceDiskStruct->data[j][20] = nBaseStructID;
 		}
 
 		if (j != 0)
@@ -208,70 +205,6 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 void ClearLastNTROEntry()
 {
 	pLastNTROInfo = NULL;
-}
-
-KeyValues * ReadStruct(std::fstream& f, uint32_t nStructID, uint32_t nIndirectionLevel, uint8_t * pIndirectionBytes)
-{
-	char szBuffer[4];
-
-	if (nIndirectionLevel > 0)
-	{
-		if (pIndirectionBytes[0] == 0x03)
-		{
-			f.read(szBuffer, 4);
-			std::streamoff p = f.tellg();
-			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-			KeyValues * pSubStruct = new KeyValues(1);
-			f.read(szBuffer, 4);
-			const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
-			if (!szStructName)
-				szStructName = FindNTROResourceName(nStructID);
-			pSubStruct->name[0] = new char[strlen(szStructName) + 1];
-			memcpy(pSubStruct->name[0], szStructName, strlen(szStructName));
-			pSubStruct->name[0][strlen(szStructName)] = '\0';
-			f.seekg(-4, ios::cur);
-			pSubStruct->data[0] = (char *)ReadStruct(f, nStructID, nIndirectionLevel - 1, &pIndirectionBytes[1]);
-			pSubStruct->type[0] = KV_TYPE_CHILD_KEYVALUE;
-			f.seekg(p);
-			return pSubStruct;
-		}
-		else if (pIndirectionBytes[0] == 0x04)
-		{
-			f.seekg(4, ios::cur);
-			f.read(szBuffer, 4);
-			KeyValues * pSubStruct = new KeyValues(*(uint32_t *)szBuffer);
-			f.seekg(-8, ios::cur);
-			f.read(szBuffer, 4);
-			std::streamoff p = f.tellg();
-			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-			for (uint32_t i = 0; i < pSubStruct->size; i++)
-			{
-				f.read(szBuffer, 4);
-				const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
-				if (!szStructName)
-					szStructName = FindNTROResourceName(nStructID);
-				pSubStruct->name[i] = new char[strlen(szStructName) + 1];
-				memcpy(pSubStruct->name[i], szStructName, strlen(szStructName));
-				pSubStruct->name[i][strlen(szStructName)] = '\0';
-				f.seekg(-4, ios::cur);
-				pSubStruct->data[i] = (char *)ReadStruct(f, nStructID, nIndirectionLevel - 1, &pIndirectionBytes[1]);
-				pSubStruct->type[i] = KV_TYPE_CHILD_KEYVALUE;
-			}
-			f.seekg(p);
-			return pSubStruct;
-		}
-		else
-		{
-			throw std::string("Unknown indirection value \"" + std::to_string(pIndirectionBytes[0]) + "\".");
-		}
-	}
-	else
-	{
-		KeyValues * pSubStruct = new KeyValues;
-		KeyValues * pResourceStruct = FindNTROResourceData(nStructID);
-		ReadStructuredData(f, *pSubStruct, pResourceStruct);
-		return pSubStruct;
-	}
 }
 
 KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
