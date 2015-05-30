@@ -332,9 +332,6 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 	uint32_t nIndex = 0;
 	uint32_t nTotalOffset = 0;
 
-	if (!pLastNTROInfo)
-		throw std::string("No NTRO information could be found. (Did you forget to process the NTRO block first?)");
-
 	f.read(szBuffer, 4);
 	KeyValues * pHeaderResource = FindNTROResourceData(*(uint32_t *)szBuffer);
 	if (!pHeaderResource)
@@ -372,9 +369,10 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 			uint16_t nDataSize = *(uint16_t *)&pSourceStruct->data[i][2];
 			uint16_t nDataType = *(uint16_t *)&pSourceStruct->data[i][4];
 
-			Destination.name[nIndex] = new char[nNameLength + 1];
+			Destination.name[nIndex] = new char[nNameLength + 3];
 			memcpy(Destination.name[nIndex], pSourceStruct->name[i], nNameLength);
 			Destination.name[nIndex][nNameLength] = '\0';
+			memcpy(&Destination.name[nIndex][nNameLength + 1], &nDataType, 2);
 
 			if (nTotalOffset != nDiskOffset)
 			{
