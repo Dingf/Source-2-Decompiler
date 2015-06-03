@@ -20,7 +20,7 @@ bool OutputGenericVPCFData(std::fstream& f, const KeyValues& kv, uint32_t nIndex
 		f << "float " << kv.name[nIndex] << " = " << std::fixed << *(float*)kv.data[nIndex] << "\n";
 	else if (nDataType == NTRO_DATA_TYPE_VECTOR3)
 		f << "float(3) " << kv.name[nIndex] << " = ( " << std::fixed << *(float*)&kv.data[nIndex][0] << ", " << *(float*)&kv.data[nIndex][4] << ", " << *(float*)&kv.data[nIndex][8] << " )\n";
-	else if (nDataType == NTRO_DATA_TYPE_VECTOR4)
+	else if (nDataType == NTRO_DATA_TYPE_COLOR)
 		f << "int(4) " << kv.name[nIndex] << " = ( " << std::fixed << (uint32_t)*(uint8_t*)&kv.data[nIndex][0] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][1] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][2] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][3] << " )\n";
 	else if (nDataType == NTRO_DATA_TYPE_BOOLEAN)
 		f << "bool " << kv.name[nIndex] << " = " << (*(bool*)kv.data[nIndex] ? "true" : "false") << "\n";

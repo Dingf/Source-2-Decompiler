@@ -60,7 +60,7 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	S2Decompiler sDecompiler(szFileList);
-	sDecompiler.StartDecompile(szInputPath, szOutputPath);
+	S2Decompiler Decompiler(szFileList);
+	Decompiler.StartDecompile(szInputPath, szOutputPath);
 	return 0;
 }

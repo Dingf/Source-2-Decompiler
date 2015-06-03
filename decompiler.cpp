@@ -169,13 +169,13 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 			throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
 		}
 	}
-
-	if (!bSilentDecompile)
-		std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
 	std::fstream f;
 	f.open(_szInputDirectory + szFilename, ios::in | ios::binary);
 	if (!f.is_open())
 		throw std::string("Could not open file \"" + szFilename + "\" for reading.");
+
+	if (!bSilentDecompile)
+		std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
 
 	f.read((char *)&nFileSize, 4);
 	f.seekg(12);

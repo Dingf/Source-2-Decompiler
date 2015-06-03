@@ -48,13 +48,18 @@ enum IntrospectionDataType
 	NTRO_DATA_TYPE_UINT64 = 17,
 	NTRO_DATA_TYPE_FLOAT = 18,
 	NTRO_DATA_TYPE_VECTOR3 = 22,
-	NTRO_DATA_TYPE_VECTOR4 = 28,
+	NTRO_DATA_TYPE_QUATERNION = 25,
+	NTRO_DATA_TYPE_VECTOR4 = 27,
+	NTRO_DATA_TYPE_COLOR = 28,   //Standard RGBA, 1 byte per channel
 	NTRO_DATA_TYPE_BOOLEAN = 30,
 	NTRO_DATA_TYPE_NAME = 31,    //Also used for notes as well? idk... seems to be some kind of special string
 };
 
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo);
-void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct = NULL);
 void ClearLastNTROEntry();
+
+KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth);
+void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32_t nDepth);
+void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct = NULL);
 
 #endif

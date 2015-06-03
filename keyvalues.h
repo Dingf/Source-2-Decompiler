@@ -11,7 +11,7 @@
    is destroyed, it frees all memory that it allocated.
 
    To prevent memory leaks and/or invalid deallocations, make sure that any children KeyValues
-   inserted as data are marked as such (using is_kv).
+   inserted as data are marked as such (by setting the type to KV_TYPE_CHILD_KEYVALUE).
 */
 
 #include <stdint.h>
@@ -26,10 +26,9 @@ enum KeyValueType
 
 struct KeyValues
 {
-	KeyValues() : size(0), name(0), data(0), type(0) { id = guid_counter++; };
+	KeyValues() : size(0), name(0), data(0), type(0) { };
 	KeyValues(uint32_t nSize)
 	{
-		id = guid_counter++;
 		size = nSize;
 		name = new char *[nSize];
 		memset(name, 0, sizeof(char *) * nSize);
@@ -66,7 +65,7 @@ struct KeyValues
 		}
 		if (type)
 			delete[] type;
-		//size = 0;
+		size = 0;
 	}
 
 	KeyValues& operator = (const KeyValues& kv)
@@ -104,9 +103,6 @@ struct KeyValues
 		}
 		return NULL;
 	}
-
-	int32_t id;
-	static uint32_t guid_counter;
 
 	uint32_t size;
 	uint8_t * type;

@@ -8,12 +8,11 @@
 
 using std::ios;
 
+uint8_t nNTRODataTypeSizes[] = { 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 4, 4, 8, 8, 4, 0, 0, 0, 12, 0, 0, 8, 0, 16, 4, 0, 1 };
+
 KeyValues * pLastNTROInfo = NULL;
 
-KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth);
-void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32_t nDepth);
-
-uint32_t SearchNTROInfo(uint32_t nID, uint32_t (*pFunction)(char *, char *))
+uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char *, char *))
 {
 	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
@@ -227,15 +226,24 @@ KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
 		KeyValues * pSubStruct = new KeyValues(1);
 		f.read(szBuffer, 4);
 		const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
-		if (!szStructName)
+		if ((!szStructName) && (nDataType == NTRO_DATA_TYPE_STRUCT))
 			szStructName = FindNTROResourceName(nStructID);
-		pSubStruct->name[0] = new char[strlen(szStructName) + 1];
-		memcpy(pSubStruct->name[0], szStructName, strlen(szStructName));
-		pSubStruct->name[0][strlen(szStructName)] = '\0';
+		if (szStructName)
+		{
+			pSubStruct->name[0] = new char[strlen(szStructName) + 1];
+			memcpy(pSubStruct->name[0], szStructName, strlen(szStructName));
+			pSubStruct->name[0][strlen(szStructName)] = '\0';
+		}
 		f.seekg(-4, ios::cur);
-		ReadDataField(f, pSubStruct->data[0], szArgs, nDepth + 1);
+
+		char * szNewArgs = new char[24];
+		memcpy(szNewArgs, szArgs, 24);
+		*(uint16_t *)&szNewArgs[2] = nNTRODataTypeSizes[nDataType];
+		ReadDataField(f, pSubStruct->data[0], szNewArgs, nDepth + 1);
 		if (nDataType == NTRO_DATA_TYPE_STRUCT)
 			pSubStruct->type[0] = KV_TYPE_CHILD_KEYVALUE;
+		delete[] szNewArgs;
+
 		f.seekg(p);
 		return pSubStruct;
 	}
@@ -248,21 +256,28 @@ KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
 		f.read(szBuffer, 4);
 		std::streamoff p = f.tellg();
 		f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+		char * szNewArgs = new char[24];
+		memcpy(szNewArgs, szArgs, 24);
+		*(uint16_t *)&szNewArgs[2] = nNTRODataTypeSizes[nDataType];
 		for (uint32_t i = 0; i < pSubStruct->size; i++)
 		{
 			f.read(szBuffer, 4);
 			const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
-			if (!szStructName)
+			if ((!szStructName) && (nDataType == NTRO_DATA_TYPE_STRUCT))
 				szStructName = FindNTROResourceName(nStructID);
-			pSubStruct->name[i] = new char[strlen(szStructName) + 1];
-			memcpy(pSubStruct->name[i], szStructName, strlen(szStructName));
-			pSubStruct->name[i][strlen(szStructName)] = '\0';
+			if (szStructName)
+			{
+				pSubStruct->name[i] = new char[strlen(szStructName) + 1];
+				memcpy(pSubStruct->name[i], szStructName, strlen(szStructName));
+				pSubStruct->name[i][strlen(szStructName)] = '\0';
+			}
 			f.seekg(-4, ios::cur);
 
-			ReadDataField(f, pSubStruct->data[i], szArgs, nDepth + 1);
+			ReadDataField(f, pSubStruct->data[i], szNewArgs, nDepth + 1);
 			if (nDataType == NTRO_DATA_TYPE_STRUCT)
 				pSubStruct->type[i] = KV_TYPE_CHILD_KEYVALUE;
 		}
+		delete[] szNewArgs;
 		f.seekg(p + 4);
 		return pSubStruct;
 	}
@@ -290,7 +305,6 @@ void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32
 	{
 		std::streamoff p = f.tellg();
 		ReadOffsetString(f, szDestination);
-		f.seekg(p + nDataSize);
 	}
 	else if (nDataType == NTRO_DATA_TYPE_STRUCT)
 	{
@@ -305,18 +319,12 @@ void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32
 
 		f.read(szBuffer2, 8);
 		const char * szResourceName = GetExternalResourceName(szBuffer2);
-		if (szResourceName)
-		{
-			uint32_t nNameLength = strlen(szResourceName);
-			szDestination = new char[nNameLength + 1];
-			memcpy(szDestination, szResourceName, nNameLength);
-			szDestination[nNameLength] = '\0';
-		}
-		else
-		{
-			szDestination = new char[1];
-			szDestination[0] = '\0';
-		}
+		if (!szResourceName)
+			szResourceName = "";
+		uint32_t nNameLength = strlen(szResourceName);
+		szDestination = new char[nNameLength + 1];
+		memcpy(szDestination, szResourceName, nNameLength);
+		szDestination[nNameLength] = '\0';
 	}
 	else
 	{
@@ -380,12 +388,13 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 				nTotalOffset = nDiskOffset;
 			}
 
+			std::streamoff p = f.tellg();
 			ReadDataField(f, Destination.data[nIndex], pSourceStruct->data[i], 0);
 			if (nDataType == NTRO_DATA_TYPE_STRUCT)
 				Destination.type[nIndex] = KV_TYPE_CHILD_KEYVALUE;
-
-			nIndex++;
+			f.seekg(p + nDataSize);
 			nTotalOffset += nDataSize;
+			nIndex++;
 		}
 		pStructStack.pop();
 	}
