@@ -10,21 +10,21 @@ using std::ios;
 bool OutputGenericVPCFData(std::fstream& f, const KeyValues& kv, uint32_t nIndex)
 {
 	uint16_t nDataType = *(uint16_t*)(&kv.name[nIndex][strlen(kv.name[nIndex]) + 1]);
-	if (nDataType == NTRO_DATA_TYPE_ENUM)
+	if (nDataType == KV_DATA_TYPE_ENUM)
 		f << "symbol " << kv.name[nIndex] << " = " << *(uint32_t*)kv.data[nIndex] << "\n";
-	else if ((nDataType == NTRO_DATA_TYPE_HANDLE) || (nDataType == NTRO_DATA_TYPE_STRING) || (nDataType == NTRO_DATA_TYPE_NAME))
+	else if ((nDataType == KV_DATA_TYPE_HANDLE) || (nDataType == KV_DATA_TYPE_STRING) || (nDataType == KV_DATA_TYPE_NAME))
 		f << "string " << kv.name[nIndex] << " = \"" << ((kv.data[nIndex] == NULL) ? "" : kv.data[nIndex]) << "\"\n";
-	else if (nDataType == NTRO_DATA_TYPE_INTEGER)
+	else if (nDataType == KV_DATA_TYPE_INTEGER)
 		f << "int " << kv.name[nIndex] << " = " << *(int32_t*)kv.data[nIndex] << "\n";
-	else if (nDataType == NTRO_DATA_TYPE_FLOAT)
+	else if (nDataType == KV_DATA_TYPE_FLOAT)
 		f << "float " << kv.name[nIndex] << " = " << std::fixed << *(float*)kv.data[nIndex] << "\n";
-	else if (nDataType == NTRO_DATA_TYPE_VECTOR3)
+	else if (nDataType == KV_DATA_TYPE_VECTOR3)
 		f << "float(3) " << kv.name[nIndex] << " = ( " << std::fixed << *(float*)&kv.data[nIndex][0] << ", " << *(float*)&kv.data[nIndex][4] << ", " << *(float*)&kv.data[nIndex][8] << " )\n";
-	else if (nDataType == NTRO_DATA_TYPE_VECTOR4)
+	else if (nDataType == KV_DATA_TYPE_VECTOR4)
 		f << "float(4) " << kv.name[nIndex] << " = ( " << std::fixed << *(float*)&kv.data[nIndex][0] << ", " << *(float*)&kv.data[nIndex][4] << ", " << *(float*)&kv.data[nIndex][8] << ", " << *(float*)&kv.data[nIndex][12] << " )\n";
-	else if (nDataType == NTRO_DATA_TYPE_COLOR)
+	else if (nDataType == KV_DATA_TYPE_COLOR)
 		f << "int(4) " << kv.name[nIndex] << " = ( " << std::fixed << (uint32_t)*(uint8_t*)&kv.data[nIndex][0] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][1] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][2] << ", " << (uint32_t)*(uint8_t*)&kv.data[nIndex][3] << " )\n";
-	else if (nDataType == NTRO_DATA_TYPE_BOOLEAN)
+	else if (nDataType == KV_DATA_TYPE_BOOLEAN)
 		f << "bool " << kv.name[nIndex] << " = " << (*(bool*)kv.data[nIndex] ? "true" : "false") << "\n";
 	else
 		return false;
@@ -48,7 +48,7 @@ void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const
 		uint16_t nDataType = *(uint16_t*)(&DataBlock.name[i][strlen(DataBlock.name[i]) + 1]);
 
 		out << "\t";
-		if ((!OutputGenericVPCFData(out, DataBlock, i)) && (nDataType == NTRO_DATA_TYPE_STRUCT))
+		if ((!OutputGenericVPCFData(out, DataBlock, i)) && (nDataType == KV_DATA_TYPE_STRUCT))
 		{
 			out.seekp(-1, ios::cur);
 			if (strncmp(DataBlock.name[i], "m_Children\0", 11) == 0)
@@ -87,7 +87,7 @@ void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const
 	for (uint32_t i = 0; i < DataBlock.size; i++)
 	{
 		uint16_t nDataType = *(uint16_t*)(&DataBlock.name[i][strlen(DataBlock.name[i]) + 1]);
-		if ((nDataType == NTRO_DATA_TYPE_STRUCT) && (strncmp(DataBlock.name[i], "m_Children\0", 11) != 0))
+		if ((nDataType == KV_DATA_TYPE_STRUCT) && (strncmp(DataBlock.name[i], "m_Children\0", 11) != 0))
 		{
 			KeyValues * pOperators = (KeyValues*)DataBlock.data[i];
 			for (uint32_t j = 0; j < pOperators->size; j++)

@@ -11,17 +11,33 @@
    is destroyed, it frees all memory that it allocated.
 
    To prevent memory leaks and/or invalid deallocations, make sure that any children KeyValues
-   inserted as data are marked as such (by setting the type to KV_TYPE_CHILD_KEYVALUE).
+   inserted as data are marked as such (by setting the type to KV_DATA_TYPE_STRUCT).
 */
 
 #include <stdint.h>
 #include <vector>
 #include <fstream>
 
-enum KeyValueType
+enum KeyValueDataType
 {
-	KV_TYPE_PLAIN_OLD_DATA = 0,
-	KV_TYPE_CHILD_KEYVALUE = 1,
+	KV_DATA_TYPE_STRUCT = 1,
+	KV_DATA_TYPE_ENUM = 2,
+	KV_DATA_TYPE_HANDLE = 3,
+	KV_DATA_TYPE_STRING = 4,
+	KV_DATA_TYPE_BYTE = 11,
+	KV_DATA_TYPE_SHORT = 12,
+	KV_DATA_TYPE_USHORT = 13,
+	KV_DATA_TYPE_INTEGER = 14,
+	KV_DATA_TYPE_UINTEGER = 15,
+	KV_DATA_TYPE_INT64 = 16,
+	KV_DATA_TYPE_UINT64 = 17,
+	KV_DATA_TYPE_FLOAT = 18,
+	KV_DATA_TYPE_VECTOR3 = 22,
+	KV_DATA_TYPE_QUATERNION = 25,
+	KV_DATA_TYPE_VECTOR4 = 27,
+	KV_DATA_TYPE_COLOR = 28,   //Standard RGBA, 1 byte per channel
+	KV_DATA_TYPE_BOOLEAN = 30,
+	KV_DATA_TYPE_NAME = 31,    //Also used for notes as well? idk... seems to be some kind of special string
 };
 
 struct KeyValues
@@ -30,12 +46,15 @@ struct KeyValues
 	KeyValues(uint32_t nSize)
 	{
 		size = nSize;
-		name = new char *[nSize];
-		memset(name, 0, sizeof(char *) * nSize);
-		data = new char *[nSize];
-		memset(data, 0, sizeof(char *) * nSize);
-		type = new uint8_t[nSize];
-		memset(type, 0, sizeof(uint8_t) * nSize);
+		if (size > 0)
+		{
+			name = new char *[nSize];
+			memset(name, 0, sizeof(char *) * nSize);
+			data = new char *[nSize];
+			memset(data, 0, sizeof(char *) * nSize);
+			type = new uint8_t[nSize];
+			memset(type, 0, sizeof(uint8_t) * nSize);
+		}
 	}
 
 	~KeyValues()
@@ -46,7 +65,7 @@ struct KeyValues
 			{
 				if (data[i])
 				{
-					if ((type) && (type[i] & KV_TYPE_CHILD_KEYVALUE))
+					if ((type) && (type[i] == KV_DATA_TYPE_STRUCT))
 						delete (KeyValues*)data[i];
 					else
 						delete[] data[i];
@@ -71,34 +90,43 @@ struct KeyValues
 	KeyValues& operator = (const KeyValues& kv)
 	{
 		size = kv.size;
-		name = new char *[size];
-		memcpy(name, kv.name, sizeof(char *) * size);
-		data = new char *[size];
-		memcpy(data, kv.data, sizeof(char *) * size);
-		type = new uint8_t[size];
-		memcpy(type, kv.type, sizeof(uint8_t) * size);
+		if (size > 0)
+		{
+			name = new char *[size];
+			memcpy(name, kv.name, sizeof(char *) * size);
+			data = new char *[size];
+			memcpy(data, kv.data, sizeof(char *) * size);
+			type = new uint8_t[size];
+			memcpy(type, kv.type, sizeof(uint8_t) * size);
+		}
 		return *this;
 	}
 	
-	const char* operator[](const char *szName) const
+	const char* operator[](const char * szName) const
 	{
-		for (uint32_t i = 0; i < size; i++)
+		if ((name) && (data))
 		{
-			if (strcmp(name[i], szName) == 0)
+			for (uint32_t i = 0; i < size; i++)
 			{
-				return data[i];
+				if (strcmp(name[i], szName) == 0)
+				{
+					return data[i];
+				}
 			}
 		}
 		return NULL;
 	}
 
-	char* operator[](const char *szName)
+	char* operator[](const char * szName)
 	{
-		for (uint32_t i = 0; i < size; i++)
+		if ((name) && (data))
 		{
-			if (strcmp(name[i], szName) == 0)
+			for (uint32_t i = 0; i < size; i++)
 			{
-				return data[i];
+				if (strcmp(name[i], szName) == 0)
+				{
+					return data[i];
+				}
 			}
 		}
 		return NULL;

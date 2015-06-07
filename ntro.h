@@ -33,28 +33,6 @@
 #include <fstream>
 #include "keyvalues.h"
 
-enum IntrospectionDataType
-{
-	NTRO_DATA_TYPE_STRUCT = 1,
-	NTRO_DATA_TYPE_ENUM = 2,
-	NTRO_DATA_TYPE_HANDLE = 3,
-	NTRO_DATA_TYPE_STRING = 4,
-	NTRO_DATA_TYPE_BYTE = 11,
-	NTRO_DATA_TYPE_SHORT = 12,
-	NTRO_DATA_TYPE_USHORT = 13,
-	NTRO_DATA_TYPE_INTEGER = 14,
-	NTRO_DATA_TYPE_UINTEGER = 15,
-	NTRO_DATA_TYPE_INT64 = 16,
-	NTRO_DATA_TYPE_UINT64 = 17,
-	NTRO_DATA_TYPE_FLOAT = 18,
-	NTRO_DATA_TYPE_VECTOR3 = 22,
-	NTRO_DATA_TYPE_QUATERNION = 25,
-	NTRO_DATA_TYPE_VECTOR4 = 27,
-	NTRO_DATA_TYPE_COLOR = 28,   //Standard RGBA, 1 byte per channel
-	NTRO_DATA_TYPE_BOOLEAN = 30,
-	NTRO_DATA_TYPE_NAME = 31,    //Also used for notes as well? idk... seems to be some kind of special string
-};
-
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo);
 void ClearLastNTROEntry();
 
