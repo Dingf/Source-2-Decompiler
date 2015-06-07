@@ -23,8 +23,9 @@ std::map<std::string, std::string> szTexParamAliases = boost::assign::map_list_o
 	("g_tDiffuseWarp",        "TextureDiffuseWarp")
 	("g_tFresnelColorWarp3D", "TextureFresnelColorWarp3D")
 	("g_tCubeMap",            "TextureCubeMap")
-	("g_tEnvironmentMap",     "TextureEnvironmentMap");
-
+	("g_tEnvironmentMap",     "TextureEnvironmentMap")
+    ("g_tFlow",               "TextureFlow")
+    ("g_tNoise",              "TextureNoise");
 
 void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
@@ -125,16 +126,17 @@ void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const
 		}
 		else if (szTexParamName == "g_tNormal")
 		{
-			FillImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName, IMAGE_CHANNEL_RED, 128);
+			SwapImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName, IMAGE_CHANNEL_ALPHA, IMAGE_CHANNEL_RED);
 			FillImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName, IMAGE_CHANNEL_BLUE, 255);
+			
 			out << "\tTextureNormal \"" << szImageName << "\"\n";
 		}
-		//Unconfirmed about the specular part
 		else if (szTexParamName == "g_tNormalSpecularMask")
 		{
 			std::string szImageName2 = szImageName.substr(0, szImageName.find_last_of(".")) + "_a.tga";
 
 			SwapImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName, IMAGE_CHANNEL_ALPHA, IMAGE_CHANNEL_RED);
+			FillImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName, IMAGE_CHANNEL_BLUE, 255);
 			ExtractImageChannel(szDecompileDirectory + "\\" + szImageName, szDecompileDirectory + "\\" + szImageName2, IMAGE_CHANNEL_ALPHA);
 
 			out << "\tTextureNormal \"" << szImageName << "\"\n";
@@ -183,7 +185,6 @@ void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const
 				szNewImageName += "_z" + std::to_string((j / 100) % 10) + std::to_string((j / 10) % 10) + std::to_string(j % 10) + ".tga";
 				if (j == 0)
 					szImageName2 = szNewImageName;
-				SwapImageChannel(szDecompileDirectory + "\\" + szNewImageName, szDecompileDirectory + "\\" + szNewImageName, IMAGE_CHANNEL_RED, IMAGE_CHANNEL_BLUE);
 			}
 			if (szImageName2.empty())
 				throw std::string("Invalid color warp 3D image.");
