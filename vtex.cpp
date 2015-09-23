@@ -510,13 +510,16 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 	uint16_t nFlags      = *(uint16_t*)DataBlock["m_nFlags"];
 
 	KeyValues* pSheetData = NULL;
-	for (uint32_t i = 0; i < ((KeyValues*)DataBlock["m_extraData"])->size; ++i)
+	if (DataBlock["m_extraData"])
 	{
-		KeyValues* pExtraData = (KeyValues*)((KeyValues*)DataBlock["m_extraData"])->data[i];
-		if (strncmp(pExtraData->name[0], "Sheet_t\0", 8) == 0)
+		for (uint32_t i = 0; i < ((KeyValues*)DataBlock["m_extraData"])->size; ++i)
 		{
-			pSheetData = (KeyValues*)pExtraData->data[0];
-			break;
+			KeyValues* pExtraData = (KeyValues*)((KeyValues*)DataBlock["m_extraData"])->data[i];
+			if (strncmp(pExtraData->name[0], "Sheet_t\0", 8) == 0)
+			{
+				pSheetData = (KeyValues*)pExtraData->data[0];
+				break;
+			}
 		}
 	}
 
@@ -559,7 +562,7 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 		out << "\t\t\"CDmeInputTexture\"\n\t\t{\n";
 		out << "\t\t\t\"m_name\"\t\"string\"\t\"0\"\n";
 
-		std::string szInputName = ((bHasSheetData) ? szSheetName : szImageName);
+		std::string szInputName = ((pSheetData) ? szSheetName : szImageName);
 		for (uint32_t i = 0; i < szInputName.size(); ++i)
 			szInputName[i] = (szInputName[i] == '\\') ? '/' : szInputName[i];
 		if (szInputName.substr(0, 2) == "./")

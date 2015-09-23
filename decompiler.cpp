@@ -213,7 +213,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 		}
 		else
 		{
-			throw std::string("Encountered invalid block type.");
+			throw std::string("Encountered invalid block type");
 		}
 	}
 	f.seekg(nFileSize);
