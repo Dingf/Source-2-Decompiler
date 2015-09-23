@@ -8,16 +8,14 @@
 
 using std::ios;
 
-uint8_t nNTRODataTypeSizes[] = { 0, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 4, 4, 8, 8, 4, 0, 0, 0, 12, 0, 0, 8, 0, 16, 4, 0, 1 };
+KeyValues* pLastNTROInfo = NULL;
 
-KeyValues * pLastNTROInfo = NULL;
-
-uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char *, char *))
+uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char*, char*))
 {
 	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
 
-	for (uint32_t i = 0; i < pLastNTROInfo->size; i++)
+	for (uint32_t i = 0; i < pLastNTROInfo->size; ++i)
 	{
 		if ((nID == *(uint32_t*)&pLastNTROInfo->name[i][strlen(pLastNTROInfo->name[i]) + 1]) || (nID == (uint32_t)pLastNTROInfo->data[i]))
 		{
@@ -27,29 +25,45 @@ uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char *, char *))
 	return 0;
 }
 
-uint32_t GetData(char * szName, char * szData)
+uint32_t GetData(char* szName, char* szData)
 {
 	return (uint32_t)szData;
 }
 
-uint32_t GetName(char * szName, char * szData)
+uint32_t GetName(char* szName, char* szData)
 {
 	return (uint32_t)szName;
 }
 
-uint32_t GetBaseStructID(char * szName, char * szData)
+uint32_t GetBaseStructID(char* szName, char* szData)
 {
 	return *(uint32_t*)&szName[strlen(szName) + 5];
 }
 
-KeyValues * FindNTROResourceData(uint32_t nID)
+KeyValues* FindNTROResourceData(uint32_t nID)
 {
-	return (KeyValues *)SearchNTROInfo(nID, GetData);
+	return (KeyValues*)SearchNTROInfo(nID, GetData);
 }
 
-const char * FindNTROResourceName(uint32_t nID)
+const char* FindNTROResourceName(uint32_t nID)
 {
-	return (const char *)SearchNTROInfo(nID, GetName);
+	return (const char*)SearchNTROInfo(nID, GetName);
+}
+
+uint16_t FindNTROResourceSize(uint32_t nID)
+{
+	if (!pLastNTROInfo)
+		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
+
+	KeyValues* pStructSizeTable = (KeyValues*)pLastNTROInfo->data[pLastNTROInfo->size - 1];
+	for (uint32_t i = 0; i < pStructSizeTable->size; ++i)
+	{
+		if (nID == *(uint32_t*)pStructSizeTable->name[i])
+		{
+			return *(uint16_t*)pStructSizeTable->data[i];
+		}
+	}
+	return 0;
 }
 
 uint32_t FindNTROBaseStructID(uint32_t nID)
@@ -69,18 +83,24 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
-	f.seekg(*(int32_t *)szBuffer + 4, ios::cur);
-	f.read((char *)&nStructSize, 4);
+	f.seekg(*(int32_t*)szBuffer + 4, ios::cur);
+	f.read((char*)&nStructSize, 4);
 	p4 = f.tellg();
 	f.seekg(4, ios::cur);
-	f.read((char *)&nEnumSize, 4);
+	f.read((char*)&nEnumSize, 4);
 
 	f.seekg(-16, ios::cur);
 	f.read(szBuffer, 4);
-	f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+	f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 
-	NTROInfo = KeyValues(nStructSize + nEnumSize);
-	for (i = 0; i < nStructSize; i++)
+	NTROInfo = KeyValues(nStructSize + nEnumSize + 1);
+
+	KeyValues* pStructSizeTable = new KeyValues(nStructSize);
+	NTROInfo.name[nStructSize + nEnumSize] = new char[1];
+	NTROInfo.name[nStructSize + nEnumSize][0] = '\0';
+	NTROInfo.data[nStructSize + nEnumSize] = (char*)pStructSizeTable;
+	NTROInfo.type[nStructSize + nEnumSize] = KV_DATA_TYPE_STRUCT;
+	for (i = 0; i < nStructSize; ++i)
 	{
 		uint16_t nDiskSize;
 		uint16_t nDiskOffset = 0;
@@ -92,24 +112,29 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
-		for (j = 0; f.get() != '\0'; j++);
+		for (j = 0; f.get() != '\0'; ++j);
 		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 9];
 		f.read(NTROInfo.name[i], j);
 		NTROInfo.name[i][j] = '\0';
 		memcpy(&NTROInfo.name[i][j + 1], &nResourceID, 4);
 		f.seekg(p2 + 8);
-		f.read((char *)&nDiskSize, 2);
+		f.read((char*)&nDiskSize, 2);
 		f.seekg(2, ios::cur);
-		f.read((char *)&nBaseStructID, 4);
+		f.read((char*)&nBaseStructID, 4);
 		memcpy(&NTROInfo.name[i][j + 5], &nBaseStructID, 4);
 		f.seekg(4, ios::cur);
 		f.read(szBuffer, 4);
 
-		KeyValues * pResourceDiskStruct = new KeyValues(*(uint32_t *)szBuffer);
+		KeyValues* pResourceDiskStruct = new KeyValues(*(uint32_t*)szBuffer);
 
-		NTROInfo.data[i] = (char *)pResourceDiskStruct;
+		NTROInfo.data[i] = (char*)pResourceDiskStruct;
 		NTROInfo.type[i] = KV_DATA_TYPE_STRUCT;
+
+		pStructSizeTable->name[i] = new char[4];
+		*(uint32_t*)pStructSizeTable->name[i] = *(uint32_t*)&nResourceID;
+		pStructSizeTable->data[i] = new char[2];
+		*(uint16_t*)pStructSizeTable->data[i] = *(uint16_t*)&nDiskSize;
 
 		p2 = f.tellg();
 		f.seekg(-8, ios::cur);
@@ -123,7 +148,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		//  4 bytes: struct ID
 		//  4 bytes: indirection level
 		//  (up to) 10 bytes: indirection bytes (3 = pointer, 4 = array)
-		for (j = 0; j < pResourceDiskStruct->size; j++)
+		for (j = 0; j < pResourceDiskStruct->size; ++j)
 		{
 			ReadOffsetString(f, pResourceDiskStruct->name[j]);
 			f.seekg(2, ios::cur);
@@ -131,35 +156,35 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 			pResourceDiskStruct->data[j] = new char[24];
 			*(uint16_t*)&pResourceDiskStruct->data[j][0] = *(uint16_t*)szBuffer;
 			if (j != 0)
-				*(uint16_t *)&pResourceDiskStruct->data[j - 1][2] = *(uint16_t *)szBuffer - nDiskOffset;
-			nDiskOffset = *(uint16_t *)szBuffer;
+				*(uint16_t*)&pResourceDiskStruct->data[j - 1][2] = *(uint16_t*)szBuffer - nDiskOffset;
+			nDiskOffset = *(uint16_t*)szBuffer;
 			f.seekg(4, ios::cur);
 			f.read(szBuffer, 4);
-			*(uint32_t *)&pResourceDiskStruct->data[j][10] = *(uint32_t *)szBuffer;
+			*(uint32_t*)&pResourceDiskStruct->data[j][10] = *(uint32_t*)szBuffer;
 			f.seekg(-8, ios::cur);
 			f.read(szBuffer, 4);
 			p3 = f.tellg();
-			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
+			f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 			memset(&pResourceDiskStruct->data[j][14], 0, 6);
-			for (k = 0; k < 10 && k < *(uint32_t *)&pResourceDiskStruct->data[j][10]; k++)
+			for (k = 0; k < 10 && k < *(uint32_t*)&pResourceDiskStruct->data[j][10]; ++k)
 				pResourceDiskStruct->data[j][14 + k] = (uint8_t)f.get();
 			f.seekg(p3 + 4);
 			f.read(szBuffer, 4);
-			*(uint32_t *)&pResourceDiskStruct->data[j][6] = *(uint32_t *)szBuffer;
+			*(uint32_t*)&pResourceDiskStruct->data[j][6] = *(uint32_t*)szBuffer;
 			f.read(szBuffer, 4);
-			*(uint16_t *)&pResourceDiskStruct->data[j][4] = *(uint16_t *)szBuffer;
+			*(uint16_t*)&pResourceDiskStruct->data[j][4] = *(uint16_t*)szBuffer;
 		}
 
 		if (j != 0)
-			*(uint16_t *)&pResourceDiskStruct->data[j - 1][2] = nDiskSize - nDiskOffset;
+			*(uint16_t*)&pResourceDiskStruct->data[j - 1][2] = nDiskSize - nDiskOffset;
 
 		f.seekg(p2 + 4);
 	}
 
 	f.seekg(p4);
 	f.read(szBuffer, 4);
-	f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-	for (i = nStructSize; i < nStructSize + nEnumSize; i++)
+	f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+	for (i = nStructSize; i < nStructSize + nEnumSize; ++i)
 	{
 		uint32_t nResourceID;
 
@@ -168,7 +193,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
 		f.seekg(*(int*)szBuffer - 4, ios::cur);
-		for (j = 0; f.get() != '\0'; j++);
+		for (j = 0; f.get() != '\0'; ++j);
 		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 5];
 		f.read(NTROInfo.name[i], j);
@@ -177,17 +202,17 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		f.seekg(p2 + 12);
 		f.read(szBuffer, 4);
 
-		KeyValues * pResourceDiskEnum = new KeyValues(*(uint32_t *)szBuffer + 1);
+		KeyValues* pResourceDiskEnum = new KeyValues(*(uint32_t*)szBuffer + 1);
 		pResourceDiskEnum->size--;
 
-		NTROInfo.data[i] = (char *)pResourceDiskEnum;
+		NTROInfo.data[i] = (char*)pResourceDiskEnum;
 		NTROInfo.type[i] = KV_DATA_TYPE_STRUCT;
 
 		f.seekg(-8, ios::cur);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
-		f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-		for (j = 0; j < pResourceDiskEnum->size; j++)
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+		for (j = 0; j < pResourceDiskEnum->size; ++j)
 		{
 			ReadOffsetString(f, pResourceDiskEnum->name[j]);
 			pResourceDiskEnum->data[j] = new char[4];
@@ -206,26 +231,47 @@ void ClearLastNTROEntry()
 	pLastNTROInfo = NULL;
 }
 
-KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
+KeyValues* ReadIndirectionData(std::fstream& f, char* szArgs, uint32_t nDepth)
 {
 	char szBuffer[4];
 
-	uint16_t nDataType = *(uint16_t *)&szArgs[4];
-	uint32_t nStructID = *(uint32_t *)&szArgs[6];
-	uint32_t nIndirectionLevel = *(uint32_t *)&szArgs[10] - nDepth;
-	uint8_t* pIndirectionBytes = (uint8_t *)&szArgs[14 + nDepth];
+	uint32_t nOffset = 0;
+	uint16_t nDataType = *(uint16_t*)&szArgs[4];
+	uint32_t nStructID = *(uint32_t*)&szArgs[6];
+	uint32_t nIndirectionLevel = *(uint32_t*)&szArgs[10] - nDepth;
+	uint8_t* pIndirectionBytes = (uint8_t*)&szArgs[14 + nDepth];
 
 	if (nIndirectionLevel == 0)
 		throw std::string("Tried to read indirection data from data without indirection.");
 
-	if (pIndirectionBytes[0] == 0x03)
+	//Note: Indirection byte value 0x05 doesn't actually exist in real NTRO data as far as I know...
+	//      In this implementation, indirection byte value 0x05 indicates a polymorphic pointer;
+	//      Specifically, it expects a type value and an offset value, both 4 bytes, such that the 
+	//      type value is added to the struct ID of the current struct to obtain the new child
+	//      struct ID. The offset is just a normal offset, as per a 0x03 indirection.
+	//      
+	//      It's a very messy implementation overall and prone to ID collisions (unlikely but still),
+	//      but without it we would have no way of handling polymorphic data (looking at you VTEX...)
+	if ((pIndirectionBytes[0] == 0x03) || (pIndirectionBytes[0] == 0x05))
 	{
+		uint32_t nOriginalStructID = nStructID;
+		if (pIndirectionBytes[0] == 0x05)
+		{
+			f.read(szBuffer, 4);
+			KeyValues* pBaseStruct = FindNTROResourceData(*(uint32_t*)szBuffer + nStructID);
+			if (pBaseStruct)
+			{
+				nOffset = FindNTROResourceSize(nStructID) - 8;
+				nStructID = *(uint32_t*)&szArgs[6] = *(uint32_t*)szBuffer + nStructID;
+			}
+		}
+
 		f.read(szBuffer, 4);
 		std::streamoff p = f.tellg();
-		f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-		KeyValues * pSubStruct = new KeyValues(1);
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+		KeyValues* pSubStruct = new KeyValues(1);
 		f.read(szBuffer, 4);
-		const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
+		const char* szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
 		if ((!szStructName) && (nDataType == KV_DATA_TYPE_STRUCT))
 			szStructName = FindNTROResourceName(nStructID);
 		if (szStructName)
@@ -236,32 +282,33 @@ KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
 		}
 		f.seekg(-4, ios::cur);
 
-		char * szNewArgs = new char[24];
+		char* szNewArgs = new char[24];
 		memcpy(szNewArgs, szArgs, 24);
-		*(uint16_t *)&szNewArgs[2] = nNTRODataTypeSizes[nDataType];
+		*(uint16_t*)&szNewArgs[2] = KeyValues::_snDataSize[nDataType];
 		ReadDataField(f, pSubStruct->data[0], szNewArgs, nDepth + 1);
-		pSubStruct->type[0] = nDataType;
+		pSubStruct->type[0] = (uint8_t)nDataType;
 		delete[] szNewArgs;
 
-		f.seekg(p);
+		*(uint32_t*)&szArgs[6] = nOriginalStructID;
+		f.seekg(p + nOffset);
 		return pSubStruct;
 	}
 	else if (pIndirectionBytes[0] == 0x04)
 	{
 		f.seekg(4, ios::cur);
 		f.read(szBuffer, 4);
-		KeyValues * pSubStruct = new KeyValues(*(uint32_t *)szBuffer);
+		KeyValues* pSubStruct = new KeyValues(*(uint32_t*)szBuffer);
 		f.seekg(-8, ios::cur);
 		f.read(szBuffer, 4);
 		std::streamoff p = f.tellg();
-		f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-		char * szNewArgs = new char[24];
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+		char* szNewArgs = new char[24];
 		memcpy(szNewArgs, szArgs, 24);
-		*(uint16_t *)&szNewArgs[2] = nNTRODataTypeSizes[nDataType];
-		for (uint32_t i = 0; i < pSubStruct->size; i++)
+		*(uint16_t*)&szNewArgs[2] = KeyValues::_snDataSize[nDataType];
+		for (uint32_t i = 0; i < pSubStruct->size; ++i)
 		{
 			f.read(szBuffer, 4);
-			const char * szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
+			const char* szStructName = FindNTROResourceName(*(uint32_t*)szBuffer);
 			if ((!szStructName) && (nDataType == KV_DATA_TYPE_STRUCT))
 				szStructName = FindNTROResourceName(nStructID);
 			if (szStructName)
@@ -273,7 +320,7 @@ KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
 			f.seekg(-4, ios::cur);
 
 			ReadDataField(f, pSubStruct->data[i], szNewArgs, nDepth + 1);
-			pSubStruct->type[i] = nDataType;
+			pSubStruct->type[i] = (uint8_t)nDataType;
 		}
 		delete[] szNewArgs;
 		f.seekg(p + 4);
@@ -286,16 +333,16 @@ KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth)
 
 }
 
-void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32_t nDepth)
+void ReadDataField(std::fstream& f, char*& szDestination, char* szArgs, uint32_t nDepth)
 {
-	uint16_t nDataSize = *(uint16_t *)&szArgs[2];
-	uint16_t nDataType = *(uint16_t *)&szArgs[4];
-	uint32_t nStructID = *(uint32_t *)&szArgs[6];
-	uint32_t nIndirectionLevel = *(uint32_t *)&szArgs[10] - nDepth;
+	uint16_t nDataSize = *(uint16_t*)&szArgs[2];
+	uint16_t nDataType = *(uint16_t*)&szArgs[4];
+	uint32_t nStructID = *(uint32_t*)&szArgs[6];
+	uint32_t nIndirectionLevel = *(uint32_t*)&szArgs[10] - nDepth;
 
 	if (nIndirectionLevel > 0)
 	{
-		szDestination = (char *)ReadIndirectionData(f, szArgs, nDepth);
+		szDestination = (char*)ReadIndirectionData(f, szArgs, nDepth);
 		return;
 	}
 
@@ -306,17 +353,17 @@ void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32
 	}
 	else if (nDataType == KV_DATA_TYPE_STRUCT)
 	{
-		KeyValues * pSubStruct = new KeyValues;
-		KeyValues * pResourceStruct = FindNTROResourceData(nStructID);
+		KeyValues* pSubStruct = new KeyValues;
+		KeyValues* pResourceStruct = FindNTROResourceData(nStructID);
 		ReadStructuredData(f, *pSubStruct, pResourceStruct);
-		szDestination = (char *)pSubStruct;
+		szDestination = (char*)pSubStruct;
 	}
 	else if (nDataType == KV_DATA_TYPE_HANDLE)
 	{
 		char szBuffer2[8];
 
 		f.read(szBuffer2, 8);
-		const char * szResourceName = GetExternalResourceName(szBuffer2);
+		const char* szResourceName = GetExternalResourceName(szBuffer2);
 		if (!szResourceName)
 			szResourceName = "";
 		uint32_t nNameLength = strlen(szResourceName);
@@ -331,15 +378,17 @@ void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32
 	}
 }
 
-void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct)
+void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues* pSourceStruct)
 {
 	char szBuffer[4];
 
 	uint32_t nIndex = 0;
 	uint32_t nTotalOffset = 0;
 
+	//if (!bRoot)
+	//{
 	f.read(szBuffer, 4);
-	KeyValues * pHeaderResource = FindNTROResourceData(*(uint32_t *)szBuffer);
+	KeyValues* pHeaderResource = FindNTROResourceData(*(uint32_t*)szBuffer);
 	if (!pHeaderResource)
 		f.seekg(-4, ios::cur);
 	else
@@ -347,6 +396,7 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 		pSourceStruct = pHeaderResource;
 		nTotalOffset += 4;
 	}
+	//}
 
 	if (!pSourceStruct)
 		throw std::string("No matching NTRO structure could be found.");
@@ -354,7 +404,7 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 	//KeyValues aren't dynamically sized, so we need to know how much to allocate ahead of time
 	//This includes the struct and all base structs that it encompasses
 	uint32_t nTotalStructSize = 0;
-	std::stack<KeyValues *> pStructStack;
+	std::stack<KeyValues*> pStructStack;
 	pStructStack.push(pSourceStruct);
 	while (pStructStack.top())
 	{
@@ -368,12 +418,12 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 	while (!pStructStack.empty())
 	{
 		pSourceStruct = pStructStack.top();
-		for (uint32_t i = 0; i < pSourceStruct->size; i++)
+		for (uint32_t i = 0; i < pSourceStruct->size; ++i)
 		{
 			uint32_t nNameLength = strlen(pSourceStruct->name[i]);
-			uint16_t nDiskOffset = *(uint16_t *)&pSourceStruct->data[i][0];
-			uint16_t nDataSize = *(uint16_t *)&pSourceStruct->data[i][2];
-			uint16_t nDataType = *(uint16_t *)&pSourceStruct->data[i][4];
+			uint16_t nDiskOffset = *(uint16_t*)&pSourceStruct->data[i][0];
+			uint16_t nDataSize = *(uint16_t*)&pSourceStruct->data[i][2];
+			uint16_t nDataType = *(uint16_t*)&pSourceStruct->data[i][4];
 
 			Destination.name[nIndex] = new char[nNameLength + 3];
 			memcpy(Destination.name[nIndex], pSourceStruct->name[i], nNameLength);
@@ -388,7 +438,7 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSo
 
 			std::streamoff p = f.tellg();
 			ReadDataField(f, Destination.data[nIndex], pSourceStruct->data[i], 0);
-			Destination.type[nIndex] = nDataType;
+			Destination.type[nIndex] = (uint8_t)nDataType;
 			f.seekg(p + nDataSize);
 			nTotalOffset += nDataSize;
 			nIndex++;

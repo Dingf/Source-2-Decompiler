@@ -32,9 +32,10 @@ enum KeyValueDataType
 	KV_DATA_TYPE_INT64 = 16,
 	KV_DATA_TYPE_UINT64 = 17,
 	KV_DATA_TYPE_FLOAT = 18,
+	KV_DATA_TYPE_VECTOR2 = 21,
 	KV_DATA_TYPE_VECTOR3 = 22,
+	KV_DATA_TYPE_VECTOR4 = 23,
 	KV_DATA_TYPE_QUATERNION = 25,
-	KV_DATA_TYPE_VECTOR4 = 27,
 	KV_DATA_TYPE_COLOR = 28,   //Standard RGBA, 1 byte per channel
 	KV_DATA_TYPE_BOOLEAN = 30,
 	KV_DATA_TYPE_NAME = 31,    //Also used for notes as well? idk... seems to be some kind of special string
@@ -42,18 +43,24 @@ enum KeyValueDataType
 
 struct KeyValues
 {
-	KeyValues() : size(0), name(0), data(0), type(0) { };
+	KeyValues() : size(0), name(NULL), data(NULL), type(NULL) { };
 	KeyValues(uint32_t nSize)
 	{
 		size = nSize;
 		if (size > 0)
 		{
-			name = new char *[nSize];
-			memset(name, 0, sizeof(char *) * nSize);
-			data = new char *[nSize];
-			memset(data, 0, sizeof(char *) * nSize);
+			name = new char*[nSize];
+			memset(name, 0, sizeof(char*) * nSize);
+			data = new char*[nSize];
+			memset(data, 0, sizeof(char*) * nSize);
 			type = new uint8_t[nSize];
 			memset(type, 0, sizeof(uint8_t) * nSize);
+		}
+		else
+		{
+			name = NULL;
+			data = NULL;
+			type = NULL;
 		}
 	}
 
@@ -61,7 +68,7 @@ struct KeyValues
 	{
 		if (data)
 		{
-			for (uint32_t i = 0; i < size; i++)
+			for (uint32_t i = 0; i < size; ++i)
 			{
 				if (data[i])
 				{
@@ -75,7 +82,7 @@ struct KeyValues
 		}
 		if (name)
 		{
-			for (uint32_t i = 0; i < size; i++)
+			for (uint32_t i = 0; i < size; ++i)
 			{
 				if (name[i])
 					delete[] name[i];
@@ -90,23 +97,26 @@ struct KeyValues
 	KeyValues& operator = (const KeyValues& kv)
 	{
 		size = kv.size;
-		if (size > 0)
-		{
-			name = new char *[size];
-			memcpy(name, kv.name, sizeof(char *) * size);
-			data = new char *[size];
-			memcpy(data, kv.data, sizeof(char *) * size);
-			type = new uint8_t[size];
-			memcpy(type, kv.type, sizeof(uint8_t) * size);
-		}
+		if (name)
+			delete[] name;
+		name = new char*[size];
+		memcpy(name, kv.name, sizeof(char*) * size);
+		if (data)
+			delete[] data;
+		data = new char*[size];
+		memcpy(data, kv.data, sizeof(char*) * size);
+		if (type)
+			delete[] type;
+		type = new uint8_t[size];
+		memcpy(type, kv.type, sizeof(uint8_t) * size);
 		return *this;
 	}
 	
-	const char* operator[](const char * szName) const
+	const char* operator[](const char* szName) const
 	{
 		if ((name) && (data))
 		{
-			for (uint32_t i = 0; i < size; i++)
+			for (uint32_t i = 0; i < size; ++i)
 			{
 				if (strcmp(name[i], szName) == 0)
 				{
@@ -117,11 +127,11 @@ struct KeyValues
 		return NULL;
 	}
 
-	char* operator[](const char * szName)
+	char* operator[](const char* szName)
 	{
 		if ((name) && (data))
 		{
-			for (uint32_t i = 0; i < size; i++)
+			for (uint32_t i = 0; i < size; ++i)
 			{
 				if (strcmp(name[i], szName) == 0)
 				{
@@ -133,11 +143,13 @@ struct KeyValues
 	}
 
 	uint32_t size;
-	uint8_t * type;
-	char ** name;
-	char ** data;
+	uint8_t* type;
+	char** name;
+	char** data;
+
+	static uint8_t _snDataSize[];
 };
 
-void ReadOffsetString(std::fstream& f, char *& sz);
+void ReadOffsetString(std::fstream& f, char*& sz);
 
 #endif

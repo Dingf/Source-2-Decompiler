@@ -36,8 +36,8 @@
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo);
 void ClearLastNTROEntry();
 
-KeyValues * ReadIndirectionData(std::fstream& f, char * szArgs, uint32_t nDepth);
-void ReadDataField(std::fstream& f, char *& szDestination, char * szArgs, uint32_t nDepth);
-void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues * pSourceStruct = NULL);
+KeyValues* ReadIndirectionData(std::fstream& f, char* szArgs, uint32_t nDepth);
+void ReadDataField(std::fstream& f, char*& szDestination, char* szArgs, uint32_t nDepth);
+void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues* pSourceStruct = NULL);
 
 #endif

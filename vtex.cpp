@@ -11,7 +11,7 @@ using std::ios;
 void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16_t nWidth, uint16_t nHeight, uint16_t nDepth, uint8_t nMipLevels, bool bGenerateMipmaps)
 {
 	char szHeader[22];
-	char * szBuffer = new char[nWidth * 4];
+	char* szBuffer = new char[nWidth * 4];
 
 	uint16_t nRealHeight = nHeight;
 
@@ -25,7 +25,7 @@ void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16
 		nRealHeight += nMipLevels - 1;
 	}
 
-	for (uint8_t i = 0; i < nDepth && i < 0xFF; i++)
+	for (uint8_t i = 0; i < nDepth && i < 0xFF; ++i)
 	{
 		std::string szNewFilenameOut;
 		if (nDepth > 1)
@@ -57,7 +57,7 @@ void ExtractRGBAImage(std::fstream& in, const std::string& szFilenameOut, uint16
 
 		for (uint8_t j = nMipLevels; j > 0; j--)
 		{
-			for (uint32_t k = 0; k < nHeight / pow(2.0f, j - 1); k++)
+			for (uint32_t k = 0; k < nHeight / pow(2.0f, j - 1); ++k)
 			{
 				memset(szBuffer, 0, nWidth * 4);
 				in.read(szBuffer, std::streamsize((4 * nWidth) / pow(2.0f, j - 1)));
@@ -86,7 +86,7 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 	char szHeader[22];
 	char szBuffer[16];
 
-	char * szBlockBuffer = new char[nWidth * 16];
+	char* szBlockBuffer = new char[nWidth * 16];
 
 	uint8_t a[8];		//Alpha values
 	uint32_t c[4];		//Color values (only the 24 LSB are used)
@@ -103,7 +103,7 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 		nRealHeight += nMipLevels - 1;
 	}
 
-	for (uint8_t i = 0; i < nDepth && i < 0xFF; i++)
+	for (uint8_t i = 0; i < nDepth && i < 0xFF; ++i)
 	{
 		if (nDepth > 1)
 		{
@@ -135,15 +135,15 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 
 		for (uint8_t j = nMipLevels; j > 0; j--)
 		{
-			for (uint32_t k = 0; k < nHeight / pow(2.0, j + 1); k++)
+			for (uint32_t k = 0; k < nHeight / pow(2.0, j + 1); ++k)
 			{
 				nBlockOffset = 0;
 				memset(szBlockBuffer, 0, nWidth * 16);
-				for (uint32_t l = 0; l < nWidth / pow(2.0, j + 1); l++)
+				for (uint32_t l = 0; l < nWidth / pow(2.0, j + 1); ++l)
 				{
-					if (nImageFormat == IMAGE_FORMAT_DXT5)
+					if (nImageFormat == VTEX_FORMAT_DXT5)
 						in.read(szBuffer, 16);
-					else if (nImageFormat == IMAGE_FORMAT_DXT1)
+					else if (nImageFormat == VTEX_FORMAT_DXT1)
 						in.read(&szBuffer[8], 8);
 
 					if (in.eof())
@@ -194,28 +194,28 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 						c[3] = 0x00000000;
 					}
 
-					for (uint8_t m = 0; m < 2; m++)
+					for (uint8_t m = 0; m < 2; ++m)
 					{
-						uint32_t ai = *(uint32_t *)&szBuffer[2 + (m * 3)];
-						uint16_t ci = *(uint16_t *)&szBuffer[12 + (m * 2)];
+						uint32_t ai = *(uint32_t*)&szBuffer[2 + (m * 3)];
+						uint16_t ci = *(uint16_t*)&szBuffer[12 + (m * 2)];
 
-						for (uint8_t n = 0; n < 4; n++)
+						for (uint8_t n = 0; n < 4; ++n)
 						{
 							memcpy(&szBlockBuffer[nBlockOffset], &c[(ci >> (n * 2)) & 0x03], 3);
 							nBlockOffset += 3;
-							if (nImageFormat == IMAGE_FORMAT_DXT5)
+							if (nImageFormat == VTEX_FORMAT_DXT5)
 								szBlockBuffer[nBlockOffset++] = a[(ai >> (n * 3)) & 0x07];
-							else if (nImageFormat == IMAGE_FORMAT_DXT1)
+							else if (nImageFormat == VTEX_FORMAT_DXT1)
 								szBlockBuffer[nBlockOffset++] = (char)0xFF;
 						}
 						nBlockOffset += (nWidth * 4) - 16;
-						for (uint8_t n = 0; n < 4; n++)
+						for (uint8_t n = 0; n < 4; ++n)
 						{
 							memcpy(&szBlockBuffer[nBlockOffset], &c[(ci >> (n * 2)) & 0x03], 3);
 							nBlockOffset += 3;
-							if (nImageFormat == IMAGE_FORMAT_DXT5)
+							if (nImageFormat == VTEX_FORMAT_DXT5)
 								szBlockBuffer[nBlockOffset++] = a[(ai >> (n * 3)) & 0x07];
-							else if (nImageFormat == IMAGE_FORMAT_DXT1)
+							else if (nImageFormat == VTEX_FORMAT_DXT1)
 								szBlockBuffer[nBlockOffset++] = (char)0xFF;
 						}
 						nBlockOffset += (nWidth * 4) - 16;
@@ -237,7 +237,7 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 
 void ExtractFrameImage(const std::string& szImageName, const std::string& szFilenameOut, float * fCoords)
 {
-	char * szBuffer;
+	char* szBuffer;
 	char szHeader[18];
 
 	uint16_t nWidth, nHeight;
@@ -285,7 +285,7 @@ void ExtractFrameImage(const std::string& szImageName, const std::string& szFile
 
 	szBuffer = new char[nFrameWidth * 4];
 	in.seekg((int32_t(fCoords[0] * nWidth) * 4) + (int32_t(fCoords[1] * nHeight) * nWidth * 4), ios::cur);
-	for (uint32_t i = 0; i < nFrameHeight; i++)
+	for (uint32_t i = 0; i < nFrameHeight; ++i)
 	{
 		p = in.tellg();
 		in.read(szBuffer, nFrameWidth * 4);
@@ -299,7 +299,7 @@ void ExtractFrameImage(const std::string& szImageName, const std::string& szFile
 	delete[] szBuffer;
 }
 
-void ExtractSheetData(KeyValues * pSheetData, const std::string& szImageName, const std::string& szFilenameOut)
+void ExtractSheetData(KeyValues* pSheetData, const std::string& szImageName, const std::string& szFilenameOut)
 {
 	uint32_t i, j, k;
 
@@ -308,24 +308,24 @@ void ExtractSheetData(KeyValues * pSheetData, const std::string& szImageName, co
 	if (!out.is_open())
 		throw std::string("Could not open file \"" + szFilenameOut + "\" for writing.");
 
-	KeyValues * pSequenceData = (KeyValues *)(*pSheetData)["m_Sequences"];
-	for (i = 0; i < pSequenceData->size; i++)
+	KeyValues* pSequenceData = (KeyValues*)(*pSheetData)["m_Sequences"];
+	for (i = 0; i < pSequenceData->size; ++i)
 	{
-		KeyValues * pSequence = (KeyValues *)pSequenceData->data[i];
-		KeyValues * pFrames = (KeyValues *)(*pSequence)["m_Frames"];
+		KeyValues* pSequence = (KeyValues*)pSequenceData->data[i];
+		KeyValues* pFrames = (KeyValues*)(*pSequence)["m_Frames"];
 
-		out << "sequence-rgba " << *(uint32_t *)(*pSequence)["m_nId"] << "\n";
+		out << "sequence-rgba " << *(uint32_t*)(*pSequence)["m_nId"] << "\n";
 		if (!(*(bool *)(*pSequence)["m_bClamp"]))
 			out << "loop\n";
 
-		for (j = 0; j < pFrames->size; j++)
+		for (j = 0; j < pFrames->size; ++j)
 		{
-			KeyValues * pFrame = (KeyValues *)(pFrames->data[j]);
-			KeyValues * pImages = (KeyValues *)(*pFrame)["m_Images"];
+			KeyValues* pFrame = (KeyValues*)(pFrames->data[j]);
+			KeyValues* pImages = (KeyValues*)(*pFrame)["m_Images"];
 			out << "frame ";
-			for (k = 0; k < pImages->size; k++)
+			for (k = 0; k < pImages->size; ++k)
 			{
-				KeyValues * pImage = (KeyValues *)(pImages->data[k]);
+				KeyValues* pImage = (KeyValues*)(pImages->data[k]);
 				std::string szFrameName = szFilenameOut.substr(0, szFilenameOut.find_last_of(".")) + "_" + std::to_string(i + 1) + "_" + std::to_string(j + 1) + "_" + std::to_string(k + 1) + ".tga";
 				ExtractFrameImage(szImageName, szFrameName, (float *)(*pImage)["uvUncropped"]);
 
@@ -338,8 +338,8 @@ void ExtractSheetData(KeyValues * pSheetData, const std::string& szImageName, co
 
 void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameOut)
 {
-	char * szBuffer;
-	char * szBlockBuffer;
+	char* szBuffer;
+	char* szBlockBuffer;
 	char szHeader[22];
 
 	uint32_t nBufferSize;
@@ -382,7 +382,7 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 
 	//Write upper third
 	memset(szBlockBuffer, 0, nBlockBufferSize);
-	for (uint32_t i = 0; i < nWidth; i++)
+	for (uint32_t i = 0; i < nWidth; ++i)
 	{
 		memcpy(&szBlockBuffer[(i * nWidth * 16) + (nWidth * 4)], &szBuffer[(nWidth * nWidth * 16) + (i * nWidth * 4)], nWidth * 4);
 	}
@@ -390,7 +390,7 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 
 	//Write middle third
 	memset(szBlockBuffer, 0, nBlockBufferSize);
-	for (uint32_t i = 0; i < nWidth; i++)
+	for (uint32_t i = 0; i < nWidth; ++i)
 	{
 		uint32_t nIndex = i * nWidth * 16;
 		uint32_t nOffset = i * nWidth * 4;
@@ -403,7 +403,7 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 
 	//Write lower third
 	memset(szBlockBuffer, 0, nBlockBufferSize);
-	for (uint32_t i = 0; i < nWidth; i++)
+	for (uint32_t i = 0; i < nWidth; ++i)
 	{
 		memcpy(&szBlockBuffer[(i * nWidth * 16) + (nWidth * 4)], &szBuffer[(nWidth * nWidth * 20) + (i * nWidth * 4)], nWidth * 4);
 	}
@@ -415,9 +415,9 @@ void BuildCubeMap(const std::string& szImageName, const std::string& szFilenameO
 }
 
 
-void ManipulateImageChannel(const std::string& szImageName, const std::string& szFilenameOut, void (*pFunction)(char **, uint8_t, uint8_t), uint8_t nImageChannel1, uint8_t nImageChannel2)
+void ManipulateImageChannel(const std::string& szImageName, const std::string& szFilenameOut, void (*pFunction)(char**, uint8_t, uint8_t), uint8_t nImageChannel1, uint8_t nImageChannel2)
 {
-	char * szBuffer;
+	char* szBuffer;
 	char szHeader[22];
 
 	uint32_t nBufferSize;
@@ -449,8 +449,8 @@ void ManipulateImageChannel(const std::string& szImageName, const std::string& s
 		throw std::string("Could not open file \"" + szFilenameOut + "\" for writing.");
 	out.write(szHeader, 22);
 
-	char * szBufferPos = szBuffer;
-	for (uint32_t i = 0; i < (uint32_t)nWidth * (uint32_t)nHeight; i++)
+	char* szBufferPos = szBuffer;
+	for (uint32_t i = 0; i < (uint32_t)nWidth * (uint32_t)nHeight; ++i)
 	{
 		pFunction(&szBufferPos, nImageChannel1, nImageChannel2);
 		szBufferPos += 4;
@@ -461,7 +461,7 @@ void ManipulateImageChannel(const std::string& szImageName, const std::string& s
 	delete[] szBuffer;
 }
 
-void ChannelExtract(char ** szBuffer, uint8_t nImageChannel, uint8_t uUnused)
+void ChannelExtract(char** szBuffer, uint8_t nImageChannel, uint8_t uUnused)
 {
 	char c = (*szBuffer)[3 - nImageChannel];
 	(*szBuffer)[0] = (*szBuffer)[1] = (*szBuffer)[2] = (*szBuffer)[3] = c;
@@ -474,7 +474,7 @@ void ExtractImageChannel(const std::string& szImageName, const std::string& szFi
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelExtract, nImageChannel, 0);
 }
 
-void ChannelFill(char ** szBuffer, uint8_t nImageChannel, uint8_t uValue)
+void ChannelFill(char** szBuffer, uint8_t nImageChannel, uint8_t uValue)
 {
 	char c = (*szBuffer)[3 - nImageChannel];
 	(*szBuffer)[3 - nImageChannel] = uValue;
@@ -486,7 +486,7 @@ void FillImageChannel(const std::string& szImageName, const std::string& szFilen
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelFill, nImageChannel, uValue);
 }
 
-void ChannelSwap(char ** szBuffer, uint8_t nImageChannel1, uint8_t nImageChannel2)
+void ChannelSwap(char** szBuffer, uint8_t nImageChannel1, uint8_t nImageChannel2)
 {
 	char c = (*szBuffer)[3 - nImageChannel1];
 	(*szBuffer)[3 - nImageChannel1] = (*szBuffer)[3 - nImageChannel2];
@@ -500,39 +500,47 @@ void SwapImageChannel(const std::string& szImageName, const std::string& szFilen
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelSwap, nImageChannel1, nImageChannel2);
 }
 
-void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
+void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName)
 {
-	uint16_t nWidth      = *(uint16_t *)DataBlock["m_nWidth"];
-	uint16_t nHeight     = *(uint16_t *)DataBlock["m_nHeight"];
-	uint16_t nDepth      = *(uint16_t *)DataBlock["m_nDepth"];
-	uint8_t nImageFormat = *(uint8_t *) DataBlock["m_nImageFormat"];
-	uint8_t nMipLevels   = *(uint8_t *) DataBlock["m_nNumMipLevels"];
-	uint16_t nFlags      = *(uint16_t *)DataBlock["m_nFlags"];
+	uint16_t nWidth      = *(uint16_t*)DataBlock["m_nWidth"];
+	uint16_t nHeight     = *(uint16_t*)DataBlock["m_nHeight"];
+	uint16_t nDepth      = *(uint16_t*)DataBlock["m_nDepth"];
+	uint8_t nImageFormat = *(uint8_t*) DataBlock["m_nImageFormat"];
+	uint8_t nMipLevels   = *(uint8_t*) DataBlock["m_nNumMipLevels"];
+	uint16_t nFlags      = *(uint16_t*)DataBlock["m_nFlags"];
 
-	KeyValues * pSheetData = (KeyValues *)((KeyValues *)DataBlock["m_pSheet"])->data[0];
-	KeyValues * pSequenceData = (KeyValues *)(*pSheetData)["m_Sequences"];
+	KeyValues* pSheetData = NULL;
+	for (uint32_t i = 0; i < ((KeyValues*)DataBlock["m_extraData"])->size; ++i)
+	{
+		KeyValues* pExtraData = (KeyValues*)((KeyValues*)DataBlock["m_extraData"])->data[i];
+		if (strncmp(pExtraData->name[0], "Sheet_t\0", 8) == 0)
+		{
+			pSheetData = (KeyValues*)pExtraData->data[0];
+			break;
+		}
+	}
 
-	bool bHasSheetData = pSequenceData->size > 0;
+	bool bBuildCubeMap = (nFlags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
 	bool bGenerateVTEX = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_VTEX_FILE);
-	bool bGenerateMipmaps = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_MIPMAPS) && !(nFlags & 0x0100) && !bHasSheetData;
+	bool bGenerateMipmaps = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_MIPMAPS) && !bBuildCubeMap && pSheetData;
 
 	std::string szImageName = szOutputName.substr(0, szOutputName.length() - 5) + ".tga";
 	std::string szSheetName = szOutputName.substr(0, szOutputName.length() - 5) + ".mks";
 
-	if (nFlags & 0x0100)
+	if (bBuildCubeMap)
 		nHeight *= 6;
 
-	if ((nImageFormat == IMAGE_FORMAT_DXT1) || (nImageFormat == IMAGE_FORMAT_DXT5))
+	if ((nImageFormat == VTEX_FORMAT_DXT1) || (nImageFormat == VTEX_FORMAT_DXT5))
 		ExtractDXTImage(f, szImageName, nWidth, nHeight, nDepth, nMipLevels, nImageFormat, bGenerateMipmaps);
-	else if (nImageFormat == IMAGE_FORMAT_RGBA8888)
+	else if (nImageFormat == VTEX_FORMAT_RGBA8888)
 		ExtractRGBAImage(f, szImageName, nWidth, nHeight, nDepth, nMipLevels, bGenerateMipmaps);
 	else
 		throw std::string("Unsupported image format: \"" + std::to_string(nImageFormat) + "\".");
 
-	if (nFlags & 0x0100)
+	if (bBuildCubeMap)
 		BuildCubeMap(szImageName, szImageName);
 
-	if (bHasSheetData)
+	if (pSheetData)
 		ExtractSheetData(pSheetData, szImageName, szSheetName);
 
 	if (bGenerateVTEX)
@@ -552,7 +560,7 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const
 		out << "\t\t\t\"m_name\"\t\"string\"\t\"0\"\n";
 
 		std::string szInputName = ((bHasSheetData) ? szSheetName : szImageName);
-		for (uint32_t i = 0; i < szInputName.size(); i++)
+		for (uint32_t i = 0; i < szInputName.size(); ++i)
 			szInputName[i] = (szInputName[i] == '\\') ? '/' : szInputName[i];
 		if (szInputName.substr(0, 2) == "./")
 			szInputName = szInputName.substr(2);
@@ -565,11 +573,11 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const
 		out << "\t\t}\n\t]\n";
 		out << "\t\"m_outputTypeString\"\t\"string\"\t\"" << (nDepth > 1 ? "3D" : "2D") << "\"\n";
 		out << "\t\"m_outputFormat\"\t\"string\"\t\"";
-		if (nImageFormat == IMAGE_FORMAT_DXT5)
+		if (nImageFormat == VTEX_FORMAT_DXT5)
 			out << "DXT5\"\n";
-		else if (nImageFormat == IMAGE_FORMAT_DXT1)
+		else if (nImageFormat == VTEX_FORMAT_DXT1)
 			out << "DXT1\"\n";
-		else if (nImageFormat == IMAGE_FORMAT_RGBA8888)
+		else if (nImageFormat == VTEX_FORMAT_RGBA8888)
 			out << "RGBA8888\"\n";
 		else
 			out << "\"\n";

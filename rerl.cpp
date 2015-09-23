@@ -6,12 +6,12 @@ using std::ios;
 
 KeyValues* pLastRERLInfo = NULL;
 
-const char* GetExternalResourceName(const char * szRefID)
+const char* GetExternalResourceName(const char* szRefID)
 {
 	if (pLastRERLInfo == NULL)
 		throw std::string("No RERL information was found. (Did you forget to process the RERL block first?)");
 
-	for (uint32_t i = 0; i < pLastRERLInfo->size; i++)
+	for (uint32_t i = 0; i < pLastRERLInfo->size; ++i)
 	{
 		if (strncmp(szRefID, pLastRERLInfo->data[i], 8) == 0)
 		{
@@ -29,9 +29,9 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& RERLInfo)
 
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
-	f.seekg(*(int32_t *)szBuffer, ios::cur);
+	f.seekg(*(int32_t*)szBuffer, ios::cur);
 	f.read(szBuffer, 4);
-	RERLInfo = KeyValues(*(uint32_t *)szBuffer);
+	RERLInfo = KeyValues(*(uint32_t*)szBuffer);
 	for (uint32_t i = 0; i < RERLInfo.size; ++i)
 	{
 		RERLInfo.data[i] = new char[9];

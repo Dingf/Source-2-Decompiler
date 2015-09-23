@@ -35,15 +35,18 @@
 
 enum DecompilerFlag
 {
-	DECOMPILER_FLAG_SILENT_DECOMPILE = 1,    //Don't print output and don't count the result towards success/failures
-	DECOMPILER_FLAG_VTEX_NO_VTEX_FILE = 2,
-	DECOMPILER_FLAG_VTEX_NO_MIPMAPS = 4,
+	DECOMPILER_FLAG_SILENT_DECOMPILE = 1,        //Don't print output and don't count the result towards success/failures
+	DECOMPILER_FLAG_VTEX_NO_VTEX_FILE = 2,       //Don't generate a VTEX file for this decompile (used mostly by VMAT)
+	DECOMPILER_FLAG_VTEX_NO_MIPMAPS = 4,         //Don't generate mipmaps for this decomile (used mostly by VMAT)
+
+	DECOMPILER_FLAG_VTEX_SPLIT_MIPMAPS = 8,      //Split each mip level into its own image
+	DECOMPILER_FLAG_VTEX_SPLIT_SEQUENCES = 16,   //Split each frame in each sequence into its own image
 };
 
 class S2Decompiler
 {
 	public:
-		typedef void (S2Decompiler::*OutputFunction)(const KeyValues&, std::fstream&, const std::string&);
+		typedef void (S2Decompiler::*OutputFunction)(const KeyValues&, const KeyValues&, std::fstream&, const std::string&);
 
 		S2Decompiler(const std::vector<std::string>& szFileList);
 
@@ -52,10 +55,10 @@ class S2Decompiler
 		void ProcessDirectory(const std::string& szDirectory);
 		void Decompile(const std::string& szPathname, const std::string& szOverrideDirectory = "");
 
-		void OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVMDL(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVMAT(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVMDL(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVPCF(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
 
 		uint32_t _nDecompilerFlags;
 		uint32_t _nSuccessCount, _nFailedCount;

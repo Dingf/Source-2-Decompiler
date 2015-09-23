@@ -10,7 +10,7 @@ namespace bfs = boost::filesystem;
 
 using std::ios;
 
-bool CheckFilenameMatch(const char * sz1, const char * sz2)
+bool CheckFilenameMatch(const char* sz1, const char* sz2)
 {
 	if (*sz1 == *sz2)
 	{
@@ -60,7 +60,7 @@ void S2Decompiler::StartDecompile(const std::string& szInputDirectory, const std
 		_szOutputDirectory += "\\";
 
 	std::vector<std::string> szNewFileList;
-	for (uint32_t i = 0; i < _szFileList.size(); i++)
+	for (uint32_t i = 0; i < _szFileList.size(); ++i)
 	{
 		if (bfs::is_regular_file(_szFileList[i]))
 		{
@@ -107,7 +107,7 @@ void S2Decompiler::ProcessDirectory(const std::string& szDirectory)
 			{
 				std::string szFilename = current->path().string();
 				szFilename = szFilename.substr(szFilename.find_last_of("\\/") + 1);
-				for (uint32_t i = 0; i < _szFileList.size(); i++)
+				for (uint32_t i = 0; i < _szFileList.size(); ++i)
 				{
 					if (CheckFilenameMatch(szFilename.c_str(), _szFileList[i].c_str()) == true)
 					{
@@ -177,9 +177,9 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	if (!bSilentDecompile)
 		std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
 
-	f.read((char *)&nFileSize, 4);
+	f.read((char*)&nFileSize, 4);
 	f.seekg(12);
-	f.read((char *)&nBlockCount, 4);
+	f.read((char*)&nBlockCount, 4);
 	for (nBlockCount; nBlockCount > 0; nBlockCount--)
 	{
 		f.read(szBuffer, 4);
@@ -193,10 +193,19 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 		}
 		else if (strncmp(szBuffer, "DATA", 4) == 0)
 		{
+			if (!NTROBlock.data)
+			{
+				std::fstream f2;
+				f2.open(".\\ntro\\" + szExtension.substr(1) + ".ntro", ios::in | ios::binary);
+				if (!f.is_open())
+					throw std::string("Could not find NTRO information for file type \"" + szExtension + "\".");
+				else
+					ProcessNTROBlock(f2, NTROBlock);
+			}
 			f.read(szBuffer, 4);
 			std::streamoff p = f.tellg();
-			f.seekg(*(int32_t *)szBuffer - 4, ios::cur);
-			ReadStructuredData(f, DATABlock, (KeyValues *)NTROBlock.data[0]);
+			f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+			ReadStructuredData(f, DATABlock, (KeyValues*)NTROBlock.data[0]);
 		}
 		else if (strncmp(szBuffer, "REDI", 4) == 0)
 		{
@@ -217,7 +226,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	{
 		try
 		{
-			(this->*(i->second))(DATABlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
+			(this->*(i->second))(DATABlock, NTROBlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
 			if (!bSilentDecompile)
 			{
 				std::cout << "done!\n";

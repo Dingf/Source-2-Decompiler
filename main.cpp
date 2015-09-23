@@ -8,16 +8,16 @@
 
 namespace bfs = boost::filesystem;
 
-std::string szDefaultPaths[] = { "c:\\program files\\steam\\steamapps\\common\\dota 2 beta\\dota_ugc\\game\\dota_imported\\",
-                                 "c:\\program files (x86)\\steam\\steamapps\\common\\dota 2 beta\\dota_ugc\\game\\dota_imported\\" };
+std::string szDefaultPaths[] = { "c:\\program files\\steam\\steamapps\\common\\dota 2 beta\\game\\dota_imported\\",
+                                 "c:\\program files (x86)\\steam\\steamapps\\common\\dota 2 beta\\game\\dota_imported\\" };
 
-int main(int argc, char ** argv)
+int main(int argc, char** argv)
 {
 	std::string szInputPath;
 	std::string szOutputPath = ".\\";
 	std::vector<std::string> szFileList;
 
-	for (int32_t i = 1; i < argc; i++)
+	for (int32_t i = 1; i < argc; ++i)
 	{
 		if (strncmp(argv[i], "-d\0", 3) == 0)
 		{
@@ -50,7 +50,7 @@ int main(int argc, char ** argv)
 
 	if (szInputPath.empty())
 	{
-		for (uint32_t i = 0; i < sizeof(szDefaultPaths) / sizeof(char *); ++i)
+		for (uint32_t i = 0; i < sizeof(szDefaultPaths) / sizeof(char*); ++i)
 		{
 			if (bfs::is_directory(szDefaultPaths[i]))
 			{
