@@ -9,47 +9,47 @@
 
    DATA Block
      2 bytes:   VTEX version (currently 1)
-	 2 bytes:   Texture flags
-	 16 bytes:  Reflectivity (vector4)
+     2 bytes:   Texture flags
+     16 bytes:  Reflectivity (vector4)
      2 bytes:   Texture width
-	 2 bytes:   Texture height
-	 2 bytes:   Texture depth
-	 1 byte:    Image format (see below)
-	 1 byte:    Number of mip levels
-	 4 bytes:   Unknown (mip 0 size?)
-	 4 bytes:   Offset to extra data
-	   -> 4 bytes:  Extra data type
-	   -> 4 bytes:  Extra data offset
-	   -> 4 bytes:  Extra data size
-	 4 bytes:   Number of extra data
-	 ?? bytes:  Extra data contents
-	 ?? bytes:  Texture data, as specified by image format, width, height, and mip levels
+     2 bytes:   Texture height
+     2 bytes:   Texture depth
+     1 byte:    Image format (see below)
+     1 byte:    Number of mip levels
+     4 bytes:   Unknown (mip 0 size?)
+     4 bytes:   Offset to extra data
+       -> 4 bytes:  Extra data type
+       -> 4 bytes:  Extra data offset
+       -> 4 bytes:  Extra data size
+     4 bytes:   Number of extra data
+     ?? bytes:  Extra data contents
+     ?? bytes:  Texture data, as specified by image format, width, height, and mip levels
 
-	 Fallback Data
-	   1024 bytes(?):  Texture fallback bits (might not always be 1024, last time was 1360 so...)
+   Fallback Data
+     1024 bytes(?):  Texture fallback bits (might not always be 1024, last time was 1360 so...)
 
-	 Sheet Data
-	   4 bytes:  Offset to sequence info
-	     -> 4 bytes:  Sequence ID
-	     -> 4 bytes:  Flags
-	       --> 0x01:  Clamp (If not clamped, sequence animation will loop)
-	       --> 0x02:  Alpha Crop
-	     -> 4 bytes:  Offset to frame data
-	       --> 4 bytes:  Display time
-	       --> 4 bytes:  Offset to image data
-	         ---> 8 bytes:  Cropped min (vector2)
-	         ---> 8 bytes:  Cropped max (vector2)
-	       --> 4 bytes:  Number of images
-	       --> 8 bytes:  Cropped min (vector2)
-	       --> 8 bytes:  Cropped max (vector2)
-	       --> 8 bytes:  Uncropped min (vector2)
-	       --> 8 bytes:  Uncropped max (vector2)
-	     -> 4 bytes:  Number of frames
-	     -> 4 bytes:  Total time (float)
-	     -> 4 bytes:  Offset to name
-	     -> 4 bytes:  Offset to float params (unconfirmed)
-	     -> 4 bytes:  Number of float params (unconfirmed)
-	   4 bytes:  Number of sequences
+   Sheet Data
+     4 bytes:  Offset to sequence info
+       -> 4 bytes:  Sequence ID
+       -> 4 bytes:  Flags
+         --> 0x01:  Clamp (If not clamped, sequence animation will loop)
+         --> 0x02:  Alpha Crop
+       -> 4 bytes:  Offset to frame data
+         --> 4 bytes:  Display time
+         --> 4 bytes:  Offset to image data
+           ---> 8 bytes:  Cropped min (vector2)
+           ---> 8 bytes:  Cropped max (vector2)
+         --> 4 bytes:  Number of images
+         --> 8 bytes:  Cropped min (vector2)
+         --> 8 bytes:  Cropped max (vector2)
+         --> 8 bytes:  Uncropped min (vector2)
+         --> 8 bytes:  Uncropped max (vector2)
+       -> 4 bytes:  Number of frames
+       -> 4 bytes:  Total time (float)
+       -> 4 bytes:  Offset to name
+       -> 4 bytes:  Offset to float params (unconfirmed)
+       -> 4 bytes:  Number of float params (unconfirmed)
+     4 bytes:  Number of sequences
 */
 
 #include <stdint.h>
