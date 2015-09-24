@@ -10,7 +10,7 @@ using std::ios;
 
 KeyValues* pLastNTROInfo = NULL;
 
-uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char*, char*))
+void* SearchNTROInfo(uint32_t nID, void*(*pFunction)(char*, char*))
 {
 	if (!pLastNTROInfo)
 		throw std::string("No NTRO information was found. (Did you forget to process the NTRO block first?)");
@@ -25,19 +25,19 @@ uint32_t SearchNTROInfo(uint32_t nID, uint32_t(*pFunction)(char*, char*))
 	return 0;
 }
 
-uint32_t GetData(char* szName, char* szData)
+void* GetData(char* szName, char* szData)
 {
-	return (uint32_t)szData;
+	return szData;
 }
 
-uint32_t GetName(char* szName, char* szData)
+void* GetName(char* szName, char* szData)
 {
-	return (uint32_t)szName;
+	return szName;
 }
 
-uint32_t GetBaseStructID(char* szName, char* szData)
+void* GetBaseStructID(char* szName, char* szData)
 {
-	return *(uint32_t*)&szName[strlen(szName) + 5];
+	return (void*)*(uint32_t*)&szName[strlen(szName) + 5];
 }
 
 KeyValues* FindNTROResourceData(uint32_t nID)
@@ -68,9 +68,8 @@ uint16_t FindNTROResourceSize(uint32_t nID)
 
 uint32_t FindNTROBaseStructID(uint32_t nID)
 {
-	return SearchNTROInfo(nID, GetBaseStructID);
+	return (uint32_t)SearchNTROInfo(nID, GetBaseStructID);
 }
-
 
 void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 {
@@ -111,7 +110,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		f.read((char*)&nResourceID, 4);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
-		f.seekg(*(int*)szBuffer - 4, ios::cur);
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; ++j);
 		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 9];
@@ -139,7 +138,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		p2 = f.tellg();
 		f.seekg(-8, ios::cur);
 		f.read(szBuffer, 4);
-		f.seekg(*(int*)szBuffer - 4, ios::cur);
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 
 		//ResourceDiskStruct data:
 		//  2 bytes: disk offset
@@ -192,7 +191,7 @@ void ProcessNTROBlock(std::fstream& f, KeyValues& NTROInfo)
 		f.read((char*)&nResourceID, 4);
 		f.read(szBuffer, 4);
 		p2 = f.tellg();
-		f.seekg(*(int*)szBuffer - 4, ios::cur);
+		f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 		for (j = 0; f.get() != '\0'; ++j);
 		f.seekg(-(int32_t)(j + 1), ios::cur);
 		NTROInfo.name[i] = new char[j + 5];
@@ -385,8 +384,6 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues* pSou
 	uint32_t nIndex = 0;
 	uint32_t nTotalOffset = 0;
 
-	//if (!bRoot)
-	//{
 	f.read(szBuffer, 4);
 	KeyValues* pHeaderResource = FindNTROResourceData(*(uint32_t*)szBuffer);
 	if (!pHeaderResource)
@@ -396,7 +393,6 @@ void ReadStructuredData(std::fstream& f, KeyValues& Destination, KeyValues* pSou
 		pSourceStruct = pHeaderResource;
 		nTotalOffset += 4;
 	}
-	//}
 
 	if (!pSourceStruct)
 		throw std::string("No matching NTRO structure could be found.");

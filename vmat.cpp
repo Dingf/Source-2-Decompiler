@@ -48,7 +48,7 @@ void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, const KeyValues& NTROB
 	for (uint32_t i = 0; i < pIntParams->size; ++i)
 	{
 		KeyValues* pIntParam = (KeyValues*)pIntParams->data[i];
-		out << "\t" << pIntParam->data[0] << " " << *(int*)pIntParam->data[1] << "\n";
+		out << "\t" << pIntParam->data[0] << " " << *(int32_t*)pIntParam->data[1] << "\n";
 	}
 	out << "\n";
 
@@ -241,7 +241,7 @@ void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, const KeyValues& NTROB
 		for (uint32_t i = 0; i < pIntAttribs->size; ++i)
 		{
 			KeyValues* pIntAttrib = (KeyValues*)pIntAttribs->data[i];
-			out << "\t\t" << pIntAttrib->data[0] << " \"" << *(int*)pIntAttrib->data[1] << "\"\n";
+			out << "\t\t" << pIntAttrib->data[0] << " \"" << *(int32_t*)pIntAttrib->data[1] << "\"\n";
 		}
 		for (uint32_t i = 0; i < pFloatAttribs->size; ++i)
 		{

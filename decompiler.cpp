@@ -218,6 +218,9 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	}
 	f.seekg(nFileSize);
 
+	if (DATABlock.size == 0)
+		throw std::string("No data was found");
+
 	ClearLastRERLEntry();
 	ClearLastNTROEntry();
 
