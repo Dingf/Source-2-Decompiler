@@ -42,8 +42,8 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 	}
 
 	_OutputMap[".vmat_c"] = &S2Decompiler::OutputVMAT;
-	_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
-	_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
+	//_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
+	//_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
 	//_OutputMap[".vsnd_c"] = &S2Decompiler::OutputVSND;
 	_OutputMap[".vtex_c"] = &S2Decompiler::OutputVTEX;
 }
@@ -144,11 +144,14 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	else
 		szFilename = szPathname.substr(szPathname.find_last_of("\\/") + 1);
 
+	if (_OutputMap.find(szExtension) == _OutputMap.end())
+		throw std::string("Unsupported file extension \"" + szExtension + "\"");
+
 	std::string szResourceName = szFilename.substr(0, szFilename.length() - 7);
 	if (szFilename.length() >= 20)
 	{
 		std::string szFileExt = szFilename.substr(szFilename.length() - 20, 5);
-		if ((szFileExt == "_tga_") || (szFileExt == "_psd_"))
+		if ((szFileExt == "_tga_") || (szFileExt == "_png_") || (szFileExt == "_psd_"))
 			szResourceName = szResourceName.substr(0, szResourceName.length() - 13);
 		if ((szResourceName.length() >= 5) && (szResourceName.substr(szResourceName.length() - 5, 5) == "_z000"))
 			szResourceName = szResourceName.substr(0, szResourceName.length() - 5);
@@ -160,15 +163,9 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	else
 		szDecompileDirectory = szOverrideDirectory;
 
-	if (!bfs::is_directory(szDecompileDirectory))
-	{
-		if (!bfs::create_directories(bfs::path(szDecompileDirectory)))
-		{
-			if (!bSilentDecompile)
-				_nFailedCount++;
-			throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
-		}
-	}
+	if (!bfs::is_directory(szDecompileDirectory) && !bfs::create_directories(bfs::path(szDecompileDirectory)))
+		throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
+
 	std::fstream f;
 	f.open(_szInputDirectory + szFilename, ios::in | ios::binary);
 	if (!f.is_open())
