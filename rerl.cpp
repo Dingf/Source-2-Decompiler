@@ -29,9 +29,13 @@ void ProcessRERLBlock(std::fstream& f, KeyValues& RERLInfo)
 
 	f.read(szBuffer, 4);
 	p1 = f.tellg();
-	f.seekg(*(int32_t*)szBuffer, ios::cur);
+	f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+	f.seekg(4, ios::cur);
 	f.read(szBuffer, 4);
 	RERLInfo = KeyValues(*(uint32_t*)szBuffer);
+	f.seekg(-8, ios::cur);
+	f.read(szBuffer, 4);
+	f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 	for (uint32_t i = 0; i < RERLInfo.size; ++i)
 	{
 		RERLInfo.data[i] = new char[9];

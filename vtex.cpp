@@ -235,6 +235,19 @@ void ExtractDXTImage(std::fstream& in, const std::string& szFilenameOut, uint16_
 	delete[] szBlockBuffer;
 }
 
+void ExtractPNGImage(std::fstream& f, const std::string& szFilenameOut)
+{
+	std::fstream out;
+	out.open(szFilenameOut, ios::out | ios::binary);
+	if (!out.is_open())
+		throw std::string("Could not open file \"" + szFilenameOut + "\" for writing.");
+	else
+	{
+		out << f.rdbuf();
+		out.close();
+	}
+}
+
 void ExtractFrameImage(const std::string& szImageName, const std::string& szFilenameOut, float * fCoords)
 {
 	char* szBuffer;
@@ -527,7 +540,7 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 	bool bGenerateVTEX = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_VTEX_FILE);
 	bool bGenerateMipmaps = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_MIPMAPS) && !bBuildCubeMap && pSheetData;
 
-	std::string szImageName = szOutputName.substr(0, szOutputName.length() - 5) + ".tga";
+	std::string szImageName = szOutputName.substr(0, szOutputName.length() - 5) + ((nImageFormat == VTEX_FORMAT_PNG) ? ".png" : ".tga");
 	std::string szSheetName = szOutputName.substr(0, szOutputName.length() - 5) + ".mks";
 
 	if (bBuildCubeMap)
@@ -537,6 +550,8 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 		ExtractDXTImage(f, szImageName, nWidth, nHeight, nDepth, nMipLevels, nImageFormat, bGenerateMipmaps);
 	else if (nImageFormat == VTEX_FORMAT_RGBA8888)
 		ExtractRGBAImage(f, szImageName, nWidth, nHeight, nDepth, nMipLevels, bGenerateMipmaps);
+	else if (nImageFormat == VTEX_FORMAT_PNG)
+		ExtractPNGImage(f, szImageName);
 	else
 		throw std::string("Unsupported image format: \"" + std::to_string(nImageFormat) + "\".");
 
@@ -580,7 +595,7 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 			out << "DXT5\"\n";
 		else if (nImageFormat == VTEX_FORMAT_DXT1)
 			out << "DXT1\"\n";
-		else if (nImageFormat == VTEX_FORMAT_RGBA8888)
+		else if ((nImageFormat == VTEX_FORMAT_RGBA8888) || (nImageFormat == VTEX_FORMAT_PNG))
 			out << "RGBA8888\"\n";
 		else
 			out << "\"\n";
