@@ -540,8 +540,12 @@ void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROB
 	bool bGenerateVTEX = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_VTEX_FILE);
 	bool bGenerateMipmaps = !(_nDecompilerFlags & DECOMPILER_FLAG_VTEX_NO_MIPMAPS) && !bBuildCubeMap && pSheetData;
 
-	std::string szImageName = szOutputName.substr(0, szOutputName.length() - 5) + ((nImageFormat == VTEX_FORMAT_PNG) ? ".png" : ".tga");
-	std::string szSheetName = szOutputName.substr(0, szOutputName.length() - 5) + ".mks";
+	std::string szBaseName = szOutputName.substr(0, szOutputName.length() - 5);
+	if ((szBaseName.substr(szBaseName.length() - 4) == "_png") || (szBaseName.substr(szBaseName.length() - 4) == "_tga"))
+		szBaseName = szBaseName.substr(0, szBaseName.length() - 4);
+
+	std::string szImageName = szBaseName + ((nImageFormat == VTEX_FORMAT_PNG) ? ".png" : ".tga");
+	std::string szSheetName = szBaseName + ".mks";
 
 	if (bBuildCubeMap)
 		nHeight *= 6;
