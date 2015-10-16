@@ -164,6 +164,8 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	else
 		szDecompileDirectory = szOverrideDirectory;
 
+	std::string szBaseFilename = szResourceName.substr(szResourceName.find_last_of("\\/") + 1);
+
 	if (!bfs::is_directory(szDecompileDirectory) && !bfs::create_directories(bfs::path(szDecompileDirectory)))
 		throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
 
@@ -200,7 +202,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 			f.seekg(-4, ios::cur);
 			if ((strncmp(szBuffer, "VKV", 3) == 0) && (szBuffer[3] == 0x03))
 			{
-				std::string szKV3FileName = szDecompileDirectory + "\\" + szResourceName + ".kv3";
+				std::string szKV3FileName = szDecompileDirectory + "\\" + szBaseFilename + ".kv3";
 				DecompressKV3(f, szKV3FileName);
 				f.close();
 				f.open(szKV3FileName, ios::in | ios::binary);
@@ -241,7 +243,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	{
 		try
 		{
-			(this->*(i->second))(DATABlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
+			(this->*(i->second))(DATABlock, f, szDecompileDirectory + "\\" + szBaseFilename + i->first.substr(0, i->first.length() - 2));
 			if (!bSilentDecompile)
 			{
 				std::cout << "done!\n";
