@@ -46,7 +46,7 @@ enum DecompilerFlag
 class S2Decompiler
 {
 	public:
-		typedef void (S2Decompiler::*OutputFunction)(const KeyValues&, const KeyValues&, std::fstream&, const std::string&);
+		typedef void (S2Decompiler::*OutputFunction)(const KeyValues&, std::fstream&, const std::string&);
 
 		S2Decompiler(const std::vector<std::string>& szFileList);
 
@@ -55,10 +55,10 @@ class S2Decompiler
 		void ProcessDirectory(const std::string& szDirectory);
 		void Decompile(const std::string& szPathname, const std::string& szOverrideDirectory = "");
 
-		void OutputVMAT(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVMDL(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVPCF(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
-		void OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVMDL(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
+		void OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName);
 
 		uint32_t _nDecompilerFlags;
 		uint32_t _nSuccessCount, _nFailedCount;

@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
 #include "decompiler.h"
+#include "kv3.h"
 
 namespace bfs = boost::filesystem;
 
@@ -43,7 +44,7 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 
 	_OutputMap[".vmat_c"] = &S2Decompiler::OutputVMAT;
 	//_OutputMap[".vmdl_c"] = &S2Decompiler::OutputVMDL;
-	//_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
+	_OutputMap[".vpcf_c"] = &S2Decompiler::OutputVPCF;
 	//_OutputMap[".vsnd_c"] = &S2Decompiler::OutputVSND;
 	_OutputMap[".vtex_c"] = &S2Decompiler::OutputVTEX;
 }
@@ -190,18 +191,32 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 		}
 		else if (strncmp(szBuffer, "DATA", 4) == 0)
 		{
+			
+			f.read(szBuffer, 4);
+			std::streamoff p = f.tellg();
+			f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
+
+			f.read(szBuffer, 4);
+			f.seekg(-4, ios::cur);
+			if ((strncmp(szBuffer, "VKV", 3) == 0) && (szBuffer[3] == 0x03))
+			{
+				std::string szKV3FileName = szDecompileDirectory + "\\" + szResourceName + ".kv3";
+				DecompressKV3(f, szKV3FileName);
+				f.close();
+				f.open(szKV3FileName, ios::in | ios::binary);
+				if (!f.is_open())
+					throw std::string("Could not open file \"" + szKV3FileName + "\" for reading.");
+				nFileSize = 0;
+			}
 			if (!NTROBlock.data)
 			{
 				std::fstream f2;
 				f2.open(".\\ntro\\" + szExtension.substr(1) + ".ntro", ios::in | ios::binary);
-				if (!f.is_open())
+				if (!f2.is_open())
 					throw std::string("Could not find NTRO information for file type \"" + szExtension + "\".");
 				else
 					ProcessNTROBlock(f2, NTROBlock);
 			}
-			f.read(szBuffer, 4);
-			std::streamoff p = f.tellg();
-			f.seekg(*(int32_t*)szBuffer - 4, ios::cur);
 			ReadStructuredData(f, DATABlock, (KeyValues*)NTROBlock.data[0]);
 		}
 		else if (strncmp(szBuffer, "REDI", 4) == 0)
@@ -226,7 +241,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 	{
 		try
 		{
-			(this->*(i->second))(DATABlock, NTROBlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
+			(this->*(i->second))(DATABlock, f, szDecompileDirectory + "\\" + szResourceName.substr(szResourceName.find_last_of("\\/") + 1) + i->first.substr(0, i->first.length() - 2));
 			if (!bSilentDecompile)
 			{
 				std::cout << "done!\n";

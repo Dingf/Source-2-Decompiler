@@ -12,6 +12,8 @@
 
    To prevent memory leaks and/or invalid deallocations, make sure that any children KeyValues
    inserted as data are marked as such (by setting the type to KV_DATA_TYPE_STRUCT).
+
+   For information on Valve's unrelated KV3 format, please see kv.h and kv3.cpp.
 */
 
 #include <stdint.h>

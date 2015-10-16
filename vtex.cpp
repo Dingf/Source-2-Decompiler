@@ -513,7 +513,7 @@ void SwapImageChannel(const std::string& szImageName, const std::string& szFilen
 	ManipulateImageChannel(szImageName, szFilenameOut, &ChannelSwap, nImageChannel1, nImageChannel2);
 }
 
-void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName)
+void S2Decompiler::OutputVTEX(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
 	uint16_t nWidth      = *(uint16_t*)DataBlock["m_nWidth"];
 	uint16_t nHeight     = *(uint16_t*)DataBlock["m_nHeight"];

@@ -4,6 +4,7 @@
 #include <fstream>
 #include "decompiler.h"
 #include "keyvalues.h"
+#include "kv3.h"
 
 using std::ios;
 
@@ -31,7 +32,7 @@ bool OutputVPCFTypeData(std::fstream& f, const KeyValues& kv, uint32_t nIndex)
 	return true;
 }
 
-void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName)
+void OutputLegacyVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
 	std::fstream out;
 	out.open(szOutputName, ios::out);
@@ -106,4 +107,15 @@ void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, const KeyValues& NTROB
 		}
 	}
 	out.close();
+}
+
+void S2Decompiler::OutputVPCF(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
+{
+	uint32_t* pSignature = (uint32_t*)DataBlock["m_Signature"];
+	if ((pSignature != NULL) && (*pSignature == 55987030))
+		OutputKV3(f, szOutputName);
+	else if (pSignature == NULL)
+		OutputLegacyVPCF(DataBlock, f, szOutputName);
+	else
+		throw std::string("Invalid KV3 signature.");
 }

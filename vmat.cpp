@@ -27,7 +27,7 @@ std::map<std::string, std::string> szTexParamAliases = boost::assign::map_list_o
     ("g_tFlow",               "TextureFlow")
     ("g_tNoise",              "TextureNoise");
 
-void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, const KeyValues& NTROBlock, std::fstream& f, const std::string& szOutputName)
+void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const std::string& szOutputName)
 {
 	std::fstream out;
 	out.open(szOutputName, ios::out);
