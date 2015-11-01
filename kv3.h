@@ -30,7 +30,7 @@
 
         12 bits       4 bits
      0000 0010 0000    0001
-	 [   Offset   ]   [Size]
+     [   Offset   ]   [Size]
 
    In this case, the offset value is 32 and the size value is 1.
    Therefore, we start at the position located 33 bytes before the
