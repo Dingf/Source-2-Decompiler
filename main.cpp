@@ -13,8 +13,11 @@ std::string szDefaultPaths[] = { "c:\\program files\\steam\\steamapps\\common\\d
 
 int main(int argc, char** argv)
 {
+	std::string szLocalPath = argv[0];
+	szLocalPath = szLocalPath.substr(0, szLocalPath.find("s2dc"));
+
 	std::string szInputPath;
-	std::string szOutputPath = ".\\";
+	std::string szOutputPath = szLocalPath;
 	std::vector<std::string> szFileList;
 
 	for (int32_t i = 1; i < argc; ++i)
@@ -61,6 +64,6 @@ int main(int argc, char** argv)
 	}
 
 	S2Decompiler Decompiler(szFileList);
-	Decompiler.StartDecompile(szInputPath, szOutputPath);
+	Decompiler.StartDecompile(szLocalPath, szInputPath, szOutputPath);
 	return 0;
 }

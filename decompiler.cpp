@@ -49,16 +49,20 @@ S2Decompiler::S2Decompiler(const std::vector<std::string>& szFileList)
 	_OutputMap[".vtex_c"] = &S2Decompiler::OutputVTEX;
 }
 
-void S2Decompiler::StartDecompile(const std::string& szInputDirectory, const std::string& szOutputDirectory)
+std::string SanitizeDirectoryPath(const std::string& sz)
 {
-	_szInputDirectory = szInputDirectory;
-	boost::algorithm::to_lower(_szInputDirectory);
-	if (_szInputDirectory.find_last_of("\\/") != _szInputDirectory.length() - 1)
-		_szInputDirectory += "\\";
-	_szOutputDirectory = szOutputDirectory;
-	boost::algorithm::to_lower(_szOutputDirectory);
-	if (_szOutputDirectory.find_last_of("\\/") != _szOutputDirectory.length() - 1)
-		_szOutputDirectory += "\\";
+	std::string sz2(sz);
+	boost::algorithm::to_lower(sz2);
+	if (sz2.find_last_of("\\/") != sz2.length() - 1)
+		sz2 += "\\";
+	return sz2;
+}
+
+void S2Decompiler::StartDecompile(const std::string& szLocalDirectory, const std::string& szInputDirectory, const std::string& szOutputDirectory)
+{
+	_szLocalDirectory = SanitizeDirectoryPath(szLocalDirectory);
+	_szInputDirectory = SanitizeDirectoryPath(szInputDirectory);
+	_szOutputDirectory = SanitizeDirectoryPath(szOutputDirectory);
 
 	std::vector<std::string> szNewFileList;
 	for (uint32_t i = 0; i < _szFileList.size(); ++i)
@@ -75,7 +79,9 @@ void S2Decompiler::StartDecompile(const std::string& szInputDirectory, const std
 			}
 		}
 		else
+		{
 			szNewFileList.push_back(_szFileList[i]);
+		}
 	}
 	_szFileList = szNewFileList;
 	if (_szFileList.size() != 0)
@@ -213,7 +219,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
 			if (!NTROBlock.data)
 			{
 				std::fstream f2;
-				f2.open(".\\ntro\\" + szExtension.substr(1) + ".ntro", ios::in | ios::binary);
+				f2.open(_szLocalDirectory + "ntro\\" + szExtension.substr(1) + ".ntro", ios::in | ios::binary);
 				if (!f2.is_open())
 					throw std::string("Could not find NTRO information for file type \"" + szExtension + "\".");
 				else

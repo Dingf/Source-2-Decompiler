@@ -47,7 +47,6 @@ void DecompressKV3(std::fstream& f, const std::string& szOutputName)
 	{
 		while (!f.eof())
 		{
-			int x = f.tellg();
 			f.read(szBuffer, 2);
 			nBlockMask = *(uint16_t*)szBuffer;
 			for (uint8_t i = 0; i < 16; i++)

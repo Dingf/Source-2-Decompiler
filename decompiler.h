@@ -50,7 +50,7 @@ class S2Decompiler
 
 		S2Decompiler(const std::vector<std::string>& szFileList);
 
-		void StartDecompile(const std::string& szInputDirectory, const std::string& szOutputDirectory);
+		void StartDecompile(const std::string& szLocalDirectory, const std::string& szInputDirectory, const std::string& szOutputDirectory);
 	private:
 		void ProcessDirectory(const std::string& szDirectory);
 		void Decompile(const std::string& szPathname, const std::string& szOverrideDirectory = "");
@@ -62,7 +62,7 @@ class S2Decompiler
 
 		uint32_t _nDecompilerFlags;
 		uint32_t _nSuccessCount, _nFailedCount;
-		std::string _szInputDirectory, _szOutputDirectory;
+		std::string _szLocalDirectory, _szInputDirectory, _szOutputDirectory;
 		std::vector<std::string> _szFileList;
 		std::map<std::string, OutputFunction> _OutputMap;
 };
