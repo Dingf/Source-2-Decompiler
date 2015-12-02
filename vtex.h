@@ -103,8 +103,8 @@ enum ImageChannel
 	SIZEOF_IMAGE_CHANNEL
 };
 
-void ExtractImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel);
-void FillImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel, uint8_t nValue);
-void SwapImageChannel(const std::string& szImageName, const std::string& szFilenameOut, ImageChannel nImageChannel1, ImageChannel nImageChannel2);
+void ExtractImageChannel(const std::string& szInputName, const std::string& szOutputName, ImageChannel nImageChannel);
+void FillImageChannel(const std::string& szInputName, const std::string& szOutputName, ImageChannel nImageChannel, uint8_t nValue);
+void SwapImageChannel(const std::string& szInputName, const std::string& szOutputName, ImageChannel nImageChannel1, ImageChannel nImageChannel2);
 
 #endif
