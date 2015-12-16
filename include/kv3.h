@@ -4,13 +4,13 @@
 /* KV3 File Format
 
     Header
-	  4 bytes:   Signature (56 4B 56 03 = VKV3)
-	  16 bytes:  Unknown (KV3 encoding?)
-	  16 bytes:  KV3 Format
-	  3 bytes:   File Size
-	  1 byte:    Flags?
-	    -> 0x80:   No compression
-	  ?? bytes:  KV3 Data (compressed unless specified above)
+      4 bytes:   Signature (56 4B 56 03 = VKV3)
+      16 bytes:  Unknown (KV3 encoding?)
+      16 bytes:  KV3 Format
+      3 bytes:   File Size
+      1 byte:    Flags?
+        -> 0x80:   No compression
+      ?? bytes:  KV3 Data (compressed unless specified above)
 
    Compressed Blocks
    ----------------------------------------------------------------
@@ -49,7 +49,7 @@
    indicates a lookup. In the example above, the fourth and
    eleventh sections are lookup sections and the rest are normal
    data.
-	 
+     
 
 */
 #include <string>
