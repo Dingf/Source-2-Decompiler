@@ -145,18 +145,19 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
     uint32_t nFileSize, nBlockCount;
     KeyValues RERLBlock, NTROBlock, DATABlock;
 
-    std::string szFilename;
+    std::string szFilename = szPathname;
     std::string szExtension = szPathname.substr(szPathname.find_last_of("."));
-    if (szPathname.find(_szInputDirectory) != std::string::npos)
-        szFilename = szPathname.substr(_szInputDirectory.length());
+
+	boost::replace_all(szFilename, "\\", "/");
+	if (szFilename.find(_szInputDirectory) != std::string::npos)
+		szFilename = szFilename.substr(_szInputDirectory.length());
     else
-        szFilename = szPathname.substr(szPathname.find_last_of("\\/") + 1);
+		szFilename = szFilename.substr(szFilename.find_last_of("\\/") + 1);
 
     if (_OutputMap.find(szExtension) == _OutputMap.end())
         throw std::string("Unsupported file extension \"" + szExtension + "\"");
 
     std::string szResourceName = szFilename.substr(0, szFilename.length() - 7);
-    std::string szBaseFilename = szResourceName.substr(szResourceName.find_last_of("\\/") + 1);
     if (szFilename.length() >= 20)
     {
         std::string szFileExt = szFilename.substr(szFilename.length() - 20, 5);
@@ -166,21 +167,21 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
             szResourceName = szResourceName.substr(0, szResourceName.length() - 5);
     }
 
-    //std::string szDecompileDirectory;
-    //if (szOverrideDirectory.empty())
-    //    szDecompileDirectory = _szOutputDirectory + szResourceName.substr(0, szResourceName.find_last_of("."));
-    //else
-    //    szDecompileDirectory = szOverrideDirectory;
+    std::string szDecompileDirectory;
+    if (szOverrideDirectory.empty())
+        szDecompileDirectory = _szOutputDirectory + szResourceName.substr(0, szResourceName.find_last_of("\\/"));
+    else
+        szDecompileDirectory = szOverrideDirectory;
 
 
-    //if (!bfs::is_directory(szDecompileDirectory) && !bfs::create_directories(bfs::path(szDecompileDirectory)))
-    //    throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
+    if (!bfs::is_directory(szDecompileDirectory) && !bfs::create_directories(bfs::path(szDecompileDirectory)))
+        throw std::string("Could not create directory \"" + szDecompileDirectory + "\".");
 
 
     std::fstream f;
-    f.open(_szInputDirectory + szFilename, ios::in | ios::binary);
-    if (!f.is_open())
-        throw std::string("Could not open file \"" + szFilename + "\" for reading.");
+	f.open(szPathname, ios::in | ios::binary);
+	if (!f.is_open())
+		throw std::string("Could not open file \"" + szFilename + "\" for reading.");
 
     if (!bSilentDecompile)
         std::cout << "[S2DC]: Decompiling " << szFilename << "... ";
@@ -211,7 +212,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
             if ((strncmp(szBuffer, "VKV", 3) == 0) && (szBuffer[3] == 0x03))
             {
                 bIsKV3File = true;
-                std::string szKV3FileName = _szOutputDirectory + szBaseFilename + ".kv3";
+				std::string szKV3FileName = _szOutputDirectory + szResourceName + ".kv3";
                 DecompressKV3(f, szKV3FileName);
                 f.close();
                 f.open(szKV3FileName, ios::in | ios::binary);
@@ -252,7 +253,7 @@ void S2Decompiler::Decompile(const std::string& szPathname, const std::string& s
     {
         try
         {
-            (this->*(i->second))(DATABlock, f, _szOutputDirectory + szBaseFilename + i->first.substr(0, i->first.length() - 2));
+			(this->*(i->second))(DATABlock, f, _szOutputDirectory + szResourceName + i->first.substr(0, i->first.length() - 2));
             if (!bSilentDecompile)
             {
                 std::cout << "done!\n";

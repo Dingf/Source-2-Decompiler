@@ -90,7 +90,6 @@ void WriteKV3Data(std::fstream& in, std::fstream& out, const char** szStringData
     int32_t i;
     uint8_t nDataType = 0;
 
-    int x = in.tellg();
     for (i = 0; i < nDepth; i++) out.put('\t');
     if ((nDepth == 0) || (nLastType == 0x08))
     {

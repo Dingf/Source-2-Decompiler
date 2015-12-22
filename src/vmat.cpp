@@ -89,14 +89,16 @@ void S2Decompiler::OutputVMAT(const KeyValues& DataBlock, std::fstream& f, const
         if ((pTextureParam->data[1] == NULL) || (strncmp(pTextureParam->data[1], "materials/default/", 18) == 0))
             continue;
 
-        std::string szDecompileDirectory = szOutputName.substr(0, szOutputName.find_last_of("\\/"));
+		std::string szResourceString = pTextureParam->data[1];
+		std::string szDecompileDirectory = szOutputName.substr(0, szOutputName.find_last_of("\\/"));
+		std::string szRelativeDirectory = szDecompileDirectory.substr(_szOutputDirectory.length());
+		std::string szFilename = szResourceString.substr(szResourceString.find_last_of("\\/"));
 
-        uint32_t nOldDecompilerFlags = _nDecompilerFlags;
+        uint32_t nCurrentDecompilerFlags = _nDecompilerFlags;
         _nDecompilerFlags = _nDecompilerFlags | DECOMPILER_FLAG_SILENT_DECOMPILE | DECOMPILER_FLAG_VTEX_NO_VTEX_FILE | DECOMPILER_FLAG_VTEX_NO_MIPMAPS;
-        Decompile(_szInputDirectory + pTextureParam->data[1] + "_c", szDecompileDirectory);
-        _nDecompilerFlags = nOldDecompilerFlags;
+		Decompile(_szInputDirectory + szRelativeDirectory + szFilename + "_c", szDecompileDirectory);
+		_nDecompilerFlags = nCurrentDecompilerFlags;
 
-        std::string szResourceString = pTextureParam->data[1];
         std::string szFileExt = szResourceString.substr(szResourceString.length() - 18, 5);
         std::string szImageName = pTextureParam->data[1];
         std::string szTexParamName = std::string(pTextureParam->data[0]);
